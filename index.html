@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Easy Match — твое призвание</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* --- ДИЗАЙН: АРХИТЕКТУРНЫЙ МИНИМАЛИЗМ v2.0 (FIXED) --- */
+        :root {
+            --bg-color: #F2F0EB;
+            --card-bg: #FFFFFF;
+            --primary: #1A1A1A;
+            --primary-hover: #333333;
+            --text-main: #1A1A1A;
+            --text-muted: #666666;
+            --border-color: #E5E5E5;
+            --radius: 0px; 
+            --easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 48px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            max-width: 580px;
+            width: 100%;
+            position: relative;
+            /* ИСПРАВЛЕНИЕ: Убрали жесткое скрытие, разрешили прокрутку если надо */
+            overflow-y: auto; 
+            max-height: 95vh; /* Чтобы на больших экранах тоже не улетало */
+        }
+
+        /* Адаптация под мобильные */
+        @media (max-width: 480px) {
+            body { padding: 0; background: var(--card-bg); align-items: flex-start; }
+            .card { 
+                padding: 30px 20px; 
+                border: none; 
+                max-height: none; /* На мобиле разрешаем бесконечную высоту */
+                height: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+            }
+            h1 { font-size: 2em; }
+            .btn { padding: 18px; font-size: 1.05em; }
+            /* Уменьшаем график на мобиле, чтобы влез */
+            .chart-container { padding: 0 !important; margin-bottom: 20px !important; }
+        }
+
+        h1 { font-weight: 700; letter-spacing: -0.03em; margin-bottom: 20px; line-height: 1.1; color: var(--primary); }
+        h2 { font-weight: 600; color: var(--primary); margin-bottom: 24px; }
+        .subtitle { color: var(--text-muted); line-height: 1.7; font-size: 1.1em; margin-bottom: 40px; font-weight: 400; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 22px 24px;
+            margin: 16px 0;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.6s var(--easing);
+            font-size: 1.1em;
+            font-weight: 500;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Убирает синий квадрат при клике на iPhone */
+        }
+        .btn:hover {
+            background-color: #FAFAFA;
+            border-color: var(--primary);
+            padding-left: 30px;
+        }
+        .btn:active { background-color: #F0F0F0; }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border: 1px solid var(--primary);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            padding-left: 24px !important;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            opacity: 0.95;
+        }
+
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #F2F0EB;
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-size: 0.8em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid var(--border-color);
+        }
+
+        .timer-box {
+            font-family: 'Inter', monospace;
+            font-variant-numeric: tabular-nums;
+            font-size: 1em;
+            color: var(--text-muted);
+            padding: 8px 0;
+            border-radius: var(--radius);
+            font-weight: 500;
+        }
+
+        .progress-container {
+            height: 4px;
+            background: var(--border-color);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            border-radius: var(--radius);
+            transition: width 0.8s var(--easing);
+        }
+
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.8s var(--easing); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-card-top {
+            background: #FAFAFA;
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+        }
+        .secondary-prof {
+            display: flex; 
+            justify-content: space-between; 
+            padding: 20px 0; 
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0;
+            align-items: center;
+            font-size: 1.05em;
+        }
+        .chart-container {
+            width: 100%; 
+            margin: 0 auto 40px auto; 
+            padding: 20px; 
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card fade-in" id="main-card">
+        
+        <div id="intro-container">
+            <h1 style="font-size: 3em;">Easy Career</h1>
+            <p class="subtitle">
+                Алгоритм для поиска профессионального призвания.
+                Анализ психотипа, модели принятия решений и скрытых ценностей.
+            </p>
+            
+            <div style="text-align: left; border-top: 1px solid var(--border-color); padding-top: 30px; margin-bottom: 40px; color: var(--text-muted); line-height: 2;">
+                <div>01 / Логика мышления</div>
+                <div>02 / Поведенческие паттерны</div>
+                <div>03 / Глубинные ценности</div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="startTest()">Начать анализ</button>
+            <p style="font-size: 0.85em; color: #999; margin-top: 20px; text-align: center;">Удачи в поиске себя!</p>
+        </div>
+
+        <div id="level-screen" class="hidden fade-in" style="padding: 60px 0; text-align: center;">
+            <h1 id="level-title" style="font-size: 4em; margin-bottom: 10px;">Уровень 2</h1>
+            <p id="level-desc" class="subtitle" style="font-size: 1.3em;">Следующий этап анализа.</p>
+            <button class="btn btn-primary" style="margin-top: 40px;" onclick="nextLevel()">Продолжить</button>
+        </div>
+
+        <div id="quiz-container" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+                <div id="level-indicator" class="level-badge">УРОВЕНЬ 01</div>
+                <div id="timer" class="timer-box">00:00</div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-fill"></div>
+            </div>
+
+            <h2 id="question-number" style="font-size: 0.85em; text-transform: uppercase; color: #999; margin-bottom: 12px; letter-spacing: 1px; font-weight: 500;">Вопрос 01 / 10</h2>
+            <p id="question-text" style="font-size: 1.5em; font-weight: 600; margin-bottom: 40px; line-height: 1.3; color: var(--primary);">...</p>
+            
+            <div id="answers-box"></div>
+        </div>
+
+        <div id="result-container" class="hidden fade-in">
+            <h2 style="text-align: left; margin-bottom: 30px; font-size: 2em; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">Профиль личности</h2>
+            
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+
+            <div class="result-card-top">
+                <div style="font-size: 0.85em; color: var(--primary); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;">Основное направление / <span id="match-percent-1">0%</span></div>
+                <h1 id="profession-name" style="margin: 0; font-size: 2.2em; color: var(--primary);">Загрузка...</h1>
+                <p id="profession-desc" style="font-size: 1.15em; margin-top: 20px; color: var(--text-muted); line-height: 1.6;">...</p>
+            </div>
+
+            <div style="margin-bottom: 40px; margin-top: 40px;">
+                <h3 style="color: #999; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Альтернативные векторы</h3>
+                
+                <div class="secondary-prof">
+                    <span id="prof-2-name" style="font-weight: 500;">Профессия 2</span>
+                    <span id="prof-2-percent" style="color: var(--primary); font-weight: 700;">0%</span>
+                </div>
+                <div class="secondary-prof">
+                    <span id="prof-3-name" style="font-weight: 500;">Профессия 3</span>
+                    <span id="prof-3-percent" style="color: var(--primary); font-weight: 700;">0%</span>
+                </div>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 30px; color: var(--text-muted); font-size: 0.9em;">
+                Затраченное время: <span id="final-time" style="color: var(--primary); font-weight: 600;">00:00</span>
+            </div>
+
+            <button class="btn" onclick="location.reload()" style="text-align: center; border-color: var(--primary); color: var(--primary);">Пройти анализ заново</button>
+            <br><br> </div>
+
+    </div>
+
+    <script>
+        // --- 1. ДАННЫЕ УРОВНЕЙ ---
+        const levels = [
+            { title: "УРОВЕНЬ 1", desc: "Твои интересы: Что тебя зажигает?" },
+            { title: "УРОВЕНЬ 2", desc: "Твой характер: Как ты действуешь?" },
+            { title: "УРОВЕНЬ 3", desc: "Твои ценности: Что для тебя важно?" }
+        ];
+
+        // --- 2. ВОПРОСЫ (PIXAR STYLE - УНИВЕРСАЛЬНЫЕ) ---
+        const questions = [
+            // --- БЛОК 1: ИНТЕРЕСЫ (Что тебе нравится?) ---
+            {
+                text: "Представь, что все компьютеры и телефоны исчезли. Кем ты станешь?",
+                answers: [
+                    { text: "Лекарем или исследователем природы.", weights: { I: 2, S: 2 }, spheres: { Bio: 3, Tech: -1 } },
+                    { text: "Мастером. Буду чинить вещи и строить дома.", weights: { R: 3, I: 1 }, spheres: { Tech: 3, Art: -1 } },
+                    { text: "Вождем или торговцем. Буду управлять людьми.", weights: { E: 3, S: 1 }, spheres: { Biz: 3, Social: 2 } },
+                    { text: "Хранителем историй. Буду писать книги и рисовать.", weights: { A: 3 }, spheres: { Art: 3, Sign: 1 } }
+                ]
+            },
+            {
+                text: "В школе (или на работе) какие задачи тебе нравятся больше?",
+                answers: [
+                    { text: "Головоломки, где есть один правильный ответ (как в математике).", weights: { I: 3, R: 1 }, spheres: { Sign: 2, Tech: 2 } },
+                    { text: "Творческие, где можно придумать что-то своё.", weights: { A: 3 }, spheres: { Art: 3 } },
+                    { text: "Опыты, эксперименты, изучение живого мира.", weights: { I: 2, R: 2 }, spheres: { Bio: 3 } },
+                    { text: "Выступления, споры, организация праздников.", weights: { E: 2, S: 2 }, spheres: { Social: 2, Biz: 2 } }
+                ]
+            },
+            {
+                text: "У тебя сломался любимый гаджет (или игрушка). Что сделаешь?",
+                answers: [
+                    { text: "Разберу, чтобы понять, как он устроен внутри!", weights: { R: 3, I: 1 }, spheres: { Tech: 3 } },
+                    { text: "Скучно. Попрошу кого-нибудь починить.", weights: { A: 1, S: 1 }, spheres: { Tech: -1 } },
+                    { text: "Куплю новый или заплачу мастеру. Не люблю возиться.", weights: { E: 2 }, spheres: { Tech: -2 }, values: { Money: 1 } },
+                    { text: "Найду инструкцию и буду делать всё чётко по схеме.", weights: { C: 3 }, spheres: { Sign: 2, Tech: 1 } }
+                ]
+            },
+            {
+                text: "Как ты относишься к урокам биологии, медицине и врачам?",
+                answers: [
+                    { text: "Это супер-интересно! Человек — сложный механизм.", weights: { I: 2, S: 1 }, spheres: { Bio: 3 } },
+                    { text: "Любопытно почитать, но лечить кого-то я бы не смог.", weights: { I: 1 }, spheres: { Bio: 1 } },
+                    { text: "Никак. Обычная наука.", weights: { C: 1 }, spheres: { Bio: 0 } },
+                    { text: "Ой нет, боюсь крови и больниц. Уберите это.", weights: { A: 1 }, spheres: { Bio: -3 } } // УБИЙЦА МЕДИЦИНЫ
+                ]
+            },
+            {
+                text: "Друг придумал крутой проект. Как ты поможешь?",
+                answers: [
+                    { text: "Настрою всю технику и программы.", weights: { R: 1, I: 2 }, spheres: { Tech: 2, Sign: 2 } },
+                    { text: "Нарисую красивый логотип и оформление.", weights: { A: 3 }, spheres: { Art: 3 } },
+                    { text: "Расскажу всем вокруг, чтобы привести людей.", weights: { E: 3 }, spheres: { Biz: 3, Social: 1 } },
+                    { text: "Составлю список дел и посчитаю расходы.", weights: { C: 3 }, spheres: { Sign: 3, Biz: 1 } }
+                ]
+            },
+            {
+                text: "Тебе подарили билет на любые курсы. Куда пойдешь?",
+                answers: [
+                    { text: "Робототехника, программирование или наука.", weights: { I: 2, R: 1 }, spheres: { Tech: 3, Sign: 2 } },
+                    { text: "Рисование, дизайн, музыка или кино.", weights: { A: 3 }, spheres: { Art: 3 } },
+                    { text: "Как стать лидером и управлять деньгами.", weights: { E: 3 }, spheres: { Biz: 3 } },
+                    { text: "Психология (понимать людей) или медицина.", weights: { S: 3, I: 1 }, spheres: { Social: 2, Bio: 2 } }
+                ]
+            },
+            {
+                text: "Перед тобой огромная таблица с кучей цифр. Твоя реакция?",
+                answers: [
+                    { text: "О, класс! Сейчас найду тут закономерность.", weights: { C: 3, I: 1 }, spheres: { Sign: 3 } },
+                    { text: "Разберусь, если это поможет победить/заработать.", weights: { E: 1, I: 1 }, spheres: { Sign: 1 } },
+                    { text: "Скукотища. Быстро устану.", weights: { R: 1 }, spheres: { Sign: -1 } },
+                    { text: "Кошмар! У меня от цифр голова болит.", weights: { A: 2, S: 1 }, spheres: { Sign: -3 } } // УБИЙЦА АНАЛИТИКИ
+                ]
+            },
+            {
+                text: "Когда ты играешь в игру или смотришь кино, что важнее?",
+                answers: [
+                    { text: "Красота картинки, музыка, стиль.", weights: { A: 3 }, spheres: { Art: 2 } },
+                    { text: "Герои, их чувства и диалоги.", weights: { S: 2, E: 1 }, spheres: { Social: 2 } },
+                    { text: "Как всё работает, механики, прокачка.", weights: { R: 2, I: 2 }, spheres: { Tech: 2 } },
+                    { text: "Победа! Главное — пройти до конца.", weights: { E: 1, C: 1 }, spheres: { Biz: 1 } }
+                ]
+            },
+            {
+                text: "Друзья говорят, что ты...",
+                answers: [
+                    { text: "Самый организованный. Всё всегда по плану.", weights: { C: 3, R: 1 }, spheres: { Sign: 1 } },
+                    { text: "Фантазёр. У тебя всегда необычные идеи.", weights: { A: 3, E: 1 }, spheres: { Art: 2 } },
+                    { text: "Душа компании. Всегда всех миришь и веселишь.", weights: { S: 3 }, spheres: { Social: 3 } },
+                    { text: "Умник. Всегда знаешь ответ на сложный вопрос.", weights: { I: 3, R: 2 }, spheres: { Tech: 1 } }
+                ]
+            },
+            {
+                text: "Выбери свой магический предмет:",
+                answers: [
+                    { text: "Супер-компьютер, который взломает всё.", weights: { I: 2, R: 1 }, spheres: { Tech: 3, Sign: 2 } },
+                    { text: "Волшебная кисть, оживляющая рисунки.", weights: { A: 3, S: 1 }, spheres: { Art: 3 } },
+                    { text: "Мешок с золотом, который никогда не кончается.", weights: { E: 3 }, spheres: { Biz: 3 } },
+                    { text: "Эликсир, который лечит любые болезни.", weights: { I: 2, R: 2 }, spheres: { Bio: 3 } }
+                ]
+            },
+
+            // --- БЛОК 2: ХАРАКТЕР (Какой ты?) ---
+            {
+                text: "В команде начался спор. Что делаешь?",
+                answers: [
+                    { text: "Беру командование на себя: 'Так, все слушаем меня!'", weights: { E: 3 }, values: { Money: 1 } },
+                    { text: "Ищу ошибки в планах других.", weights: { C: 2, I: 1 } },
+                    { text: "Пытаюсь всех помирить, чтобы никто не обиделся.", weights: { S: 3 } },
+                    { text: "Молча делаю свою работу, пока они спорят.", weights: { R: 2, I: 1 } }
+                ]
+            },
+            {
+                text: "Нужно сделать скучное, но важное задание. Как будешь делать?",
+                answers: [
+                    { text: "Сделаю всё идеально по правилам. Надо так надо.", weights: { C: 3 } },
+                    { text: "Попробую придумать способ сделать это быстрее (хитростью).", weights: { I: 3, R: 1 } },
+                    { text: "Попрошу кого-нибудь другого сделать это.", weights: { E: 3 } },
+                    { text: "Буду тянуть до последнего и страдать.", weights: { A: 2 } }
+                ]
+            },
+            {
+                text: "Какую книгу ты бы открыл первой?",
+                answers: [
+                    { text: "'Секреты миллионеров: как стать успешным'.", weights: { E: 3 }, spheres: { Biz: 2 } },
+                    { text: "'Роботы и будущее: как изменится мир'.", weights: { I: 3 }, spheres: { Tech: 2 } },
+                    { text: "'Язык людей: как понимать любого с полуслова'.", weights: { S: 3 }, spheres: { Social: 2 } },
+                    { text: "'Искусство и вдохновение: лучшие шедевры'.", weights: { A: 3 }, spheres: { Art: 2 } }
+                ]
+            },
+            {
+                text: "Упс! Ты допустил ошибку. Твои мысли?",
+                answers: [
+                    { text: "Интересно, почему так вышло? Надо разобраться.", weights: { I: 3, C: 1 } },
+                    { text: "Быстро исправлю, пока никто не увидел!", weights: { R: 2, E: 1 } },
+                    { text: "Честно признаюсь и попрошу помощи.", weights: { S: 2 } },
+                    { text: "Блин, какой я невнимательный... Расстроюсь.", weights: { A: 1 } }
+                ]
+            },
+            {
+                text: "Есть опасный, но короткий путь. Пойдем?",
+                answers: [
+                    { text: "Да! Кто не рискует, тот не побеждает!", weights: { E: 3, A: 1 }, values: { Safe: -2 } },
+                    { text: "Можно, если я всё заранее просчитал.", weights: { I: 2, E: 1 } },
+                    { text: "Нет, лучше пойти безопасной дорогой.", weights: { C: 3, S: 1 }, values: { Safe: 3 } },
+                    { text: "Пойду, только если надо кого-то спасти.", weights: { S: 2, R: 1 } }
+                ]
+            },
+            {
+                text: "Идеальный выходной — это...",
+                answers: [
+                    { text: "Спорт, поход, движение.", weights: { R: 3 } },
+                    { text: "Чтение умной книги или стратегия на компе.", weights: { I: 3 } },
+                    { text: "Вечеринка с кучей друзей.", weights: { E: 2, S: 2 } },
+                    { text: "Музей, концерт или рисование в тишине.", weights: { A: 3 } }
+                ]
+            },
+            {
+                text: "Что тебя больше всего бесит?",
+                answers: [
+                    { text: "Глупость. Когда люди не думают головой.", weights: { I: 3, C: 1 } },
+                    { text: "Лень. Когда обещают и не делают.", weights: { E: 2, C: 2 } },
+                    { text: "Злость. Когда обижают слабых.", weights: { S: 3 } },
+                    { text: "Скука. Когда каждый день одно и то же.", weights: { A: 3 } }
+                ]
+            },
+            {
+                text: "Убеди меня купить эту обычную ручку:",
+                answers: [
+                    { text: "Она очень надежная и никогда не сломается.", weights: { R: 2, I: 1 } },
+                    { text: "Эта ручка нужна тебе, чтобы записать свою мечту!", weights: { E: 3, S: 1 } },
+                    { text: "Смотри, какая она красивая и стильная.", weights: { A: 3 } },
+                    { text: "Не умею продавать. Просто ручка и всё.", weights: { C: 2, I: 1 }, spheres: { Biz: -1 } }
+                ]
+            },
+            {
+                text: "Что тебе ближе?",
+                answers: [
+                    { text: "Строить и мастерить руками.", weights: { R: 3 }, spheres: { Tech: 1 } },
+                    { text: "Учить и лечить людей.", weights: { S: 3 }, spheres: { Social: 1 } },
+                    { text: "Считать и проверять данные.", weights: { C: 3 }, spheres: { Sign: 1 } },
+                    { text: "Командовать и договариваться.", weights: { E: 3 }, spheres: { Biz: 1 } }
+                ]
+            },
+            {
+                text: "Твоя суперсила:",
+                answers: [
+                    { text: "Мега-мозг (понимать всё мгновенно).", weights: { I: 3 } },
+                    { text: "Гипноз (убеждать любого человека).", weights: { E: 3, S: 1 } },
+                    { text: "Золотые руки (чинить и создавать что угодно).", weights: { R: 2, A: 2 } },
+                    { text: "Рентген (видеть ошибки и неточности).", weights: { C: 3 } }
+                ]
+            },
+
+            // --- БЛОК 3: ЦЕННОСТИ (Что для тебя важно?) ---
+            {
+                text: "Что для тебя значит 'Успех'?",
+                answers: [
+                    { text: "Много денег и уважение окружающих.", weights: { E: 3 }, values: { Money: 3 } },
+                    { text: "Возможность делать то, что хочу, и никого не слушать.", weights: { A: 2, I: 1 }, values: { Free: 3 } },
+                    { text: "Уверенность, что завтра всё будет хорошо.", weights: { C: 3 }, values: { Safe: 3 } },
+                    { text: "Осознание, что я помогаю миру стать лучше.", weights: { S: 3 }, values: { Res: 2 } }
+                ]
+            },
+            {
+                text: "Ради чего ты готов не спать всю ночь?",
+                answers: [
+                    { text: "Ради большого заработка.", weights: { E: 2 }, values: { Money: 3 } },
+                    { text: "Ради разгадки сложной тайны или задачи.", weights: { I: 3, R: 1 }, values: { Res: 3 } },
+                    { text: "Ради своего собственного проекта.", weights: { E: 3 }, values: { Free: 2 } },
+                    { text: "Ни за что. Сон важнее.", weights: { S: 1, A: 1 }, values: { Free: 1 } }
+                ]
+            },
+            {
+                text: "Каким должен быть идеальный командир (начальник)?",
+                answers: [
+                    { text: "Тот, кто говорит четко и не мешает мне работать.", weights: { R: 2, I: 1 }, values: { Free: 1 } },
+                    { text: "Мудрый учитель, у которого я могу учиться.", weights: { I: 2, S: 1 }, values: { Res: 1 } },
+                    { text: "Я сам себе командир!", weights: { E: 3, A: 1 }, values: { Free: 3 } },
+                    { text: "Тот, кто заботится о команде как о семье.", weights: { S: 3 }, values: { Safe: 1 } }
+                ]
+            },
+            {
+                text: "Самая ужасная работа — это...",
+                answers: [
+                    { text: "Скучная, где каждый день одно и то же.", weights: { A: 2, E: 2 }, values: { Free: 2, Safe: -1 } },
+                    { text: "Нестабильная, где могут уволить в любой момент.", weights: { C: 3, S: 1 }, values: { Safe: 3, Risk: -2 } },
+                    { text: "В одиночестве, в пустой комнате.", weights: { S: 3 }, spheres: { Social: 2 } },
+                    { text: "Бессмысленная, которую никто не оценит.", weights: { I: 2, R: 1 }, values: { Res: 3 } }
+                ]
+            },
+            {
+                text: "Где бы ты хотел работать?",
+                answers: [
+                    { text: "В огромной надежной корпорации (как в замке).", weights: { C: 2, E: 1 }, values: { Safe: 2, Money: 1 } },
+                    { text: "В маленькой, но быстрой команде (как на пиратском корабле).", weights: { E: 2, I: 1 }, values: { Risk: 2, Res: 1 } },
+                    { text: "На себя, сидя на пляже с ноутбуком.", weights: { A: 2, I: 1 }, values: { Free: 3 } },
+                    { text: "В больнице или школе, помогая людям.", weights: { C: 3, S: 1 }, values: { Safe: 3 } }
+                ]
+            },
+            {
+                text: "Любишь ли ты соревнования?",
+                answers: [
+                    { text: "Да! Я хочу быть первым и всех победить.", weights: { E: 3 }, values: { Money: 1, Res: 1 } },
+                    { text: "Не очень. Лучше дружить и делать вместе.", weights: { S: 3, A: 1 } },
+                    { text: "Мне все равно. Я соревнуюсь только с собой.", weights: { I: 2, R: 1 }, values: { Res: 2 } },
+                    { text: "Нет, это лишние нервы.", weights: { C: 2 }, values: { Safe: 1 } }
+                ]
+            },
+            {
+                text: "Если бы зарплата была одинаковой, что выберешь?",
+                answers: [
+                    { text: "Исследовать космос или океан.", weights: { I: 3, R: 2 }, spheres: { Bio: 1, Tech: 1 } },
+                    { text: "Снимать кино или писать музыку.", weights: { A: 3 }, spheres: { Art: 3 } },
+                    { text: "Управлять городом.", weights: { E: 3 }, spheres: { Biz: 2 } },
+                    { text: "Спасать животных или людей.", weights: { S: 3 }, spheres: { Social: 3 } }
+                ]
+            },
+             {
+                text: "Как ты относишься к переменам?",
+                answers: [
+                    { text: "Обожаю! Скучаю, когда всё спокойно.", weights: { E: 2, A: 2 }, values: { Risk: 2 } },
+                    { text: "Изучаю новое, только если это полезно.", weights: { I: 2, R: 1 } },
+                    { text: "Люблю, когда всё предсказуемо и знакомо.", weights: { C: 3 }, values: { Safe: 2 } },
+                    { text: "Тяжело привыкаю к новому.", weights: { S: 1, C: 1 } }
+                ]
+            },
+            {
+                text: "Твой девиз по жизни:",
+                answers: [
+                    { text: "'Семь раз отмерь, один раз отрежь'.", weights: { C: 3, R: 1 } },
+                    { text: "'Главное начать, а там разберемся!'.", weights: { E: 3 }, values: { Risk: 2 } },
+                    { text: "'Твори и создавай красоту'.", weights: { A: 3 } },
+                    { text: "'Знание — это сила'.", weights: { I: 3 } }
+                ]
+            },
+            {
+                text: "ФИНАЛ. В конце твоего фильма жизни...",
+                answers: [
+                    { text: "Я создал шедевр, который все помнят.", weights: { A: 2, E: 2 }, values: { Res: 3 } },
+                    { text: "Я заработал состояние и моя семья счастлива.", weights: { E: 2, C: 2 }, values: { Money: 3, Safe: 2 } },
+                    { text: "Я открыл великую тайну вселенной.", weights: { I: 3 }, values: { Res: 2 } },
+                    { text: "Я прожил спокойную и добрую жизнь.", weights: { S: 2, A: 1 }, values: { Free: 2, Safe: 2 } }
+                ]
+            }
+        ];
+
+        // 4. БАЗА ПРОФЕССИЙ (PROFESSIONAL & FACTUAL EDITION)
+        // 4. БАЗА ПРОФЕССИЙ (FIXED EDITION)
+        const professions = [
+            // --- IT & TECH ---
+            { 
+                name: "Fullstack-Архитектор", 
+                scores: { R:50, I:100, A:30, S:10, E:20, C:60 }, 
+                spheres: { main: "Tech", sec: "Sign" },
+                desc: `<b>Результат:</b> Склонность к комплексному проектированию.<br><br><b>Профиль:</b> Вы обладаете системным мышлением и способны удерживать в фокусе весь проект целиком, а не отдельные его части.<br><br><b>Суть работы:</b> Создание веб-сервисов 'под ключ': проектирование баз данных, настройка серверов и разработка клиентского интерфейса.<br><br><b>Плюсы/Минусы:</b> Высокая востребованность и независимость в работе / Необходимость постоянно поддерживать знания в широком стеке технологий.<br><br><b>Совет:</b> Начните с изучения архитектуры клиент-серверных приложений и языка JavaScript.` 
+            },
+            { 
+                name: "Backend-разработчик", 
+                scores: { R:40, I:100, A:10, S:0, E:10, C:80 }, 
+                spheres: { main: "Tech", sec: "Sign" },
+                desc: `<b>Результат:</b> Склонность к алгоритмизации и логике.<br><br><b>Профиль:</b> Вам подходит работа, требующая высокой концентрации, работы со структурами данных и оптимизации процессов.<br><br><b>Суть работы:</b> Разработка серверной логики (того, что скрыто от глаз пользователя): API, базы данных, интеграции.<br><br><b>Плюсы/Минусы:</b> Четкие технические задачи, высокий доход / Высокая цена ошибки (риск потери данных).<br><br><b>Совет:</b> Изучите основы SQL и выберите один серверный язык (Python, Go или Java).` 
+            },
+            { 
+                name: "Frontend / Мобильный разработчик", 
+                scores: { R:40, I:80, A:60, S:20, E:30, C:50 }, 
+                spheres: { main: "Tech", sec: "Art" },
+                desc: `<b>Результат:</b> Баланс между техническими навыками и визуальным восприятием.<br><br><b>Профиль:</b> Специалист по интерфейсам. Вы понимаете, как сделать продукт удобным и визуально приятным для пользователя.<br><br><b>Суть работы:</b> Верстка макетов, программирование анимаций и логики взаимодействия пользователя с сайтом или приложением.<br><br><b>Плюсы/Минусы:</b> Быстрый визуальный результат работы / Необходимость адаптировать код под разные устройства.<br><br><b>Совет:</b> Изучите HTML, CSS и базовые принципы UI/UX дизайна.` 
+            },
+            { 
+                name: "DevOps-инженер", 
+                scores: { R:70, I:80, A:0, S:10, E:20, C:90 }, 
+                spheres: { main: "Tech", sec: "Sign" },
+                desc: `<b>Результат:</b> Склонность к автоматизации и администрированию.<br><br><b>Профиль:</b> Инженер инфраструктуры. Ваша сильная сторона — создание надежных систем, которые работают без сбоев.<br><br><b>Суть работы:</b> Настройка серверов, облачных хранилищ и автоматизация доставки кода от разработчика к пользователю (CI/CD).<br><br><b>Плюсы/Минусы:</b> Одна из самых высоких зарплат в IT / Возможны ночные инциденты и срочные вызовы.<br><br><b>Совет:</b> Ознакомьтесь с операционной системой Linux и технологией контейнеризации Docker.` 
+            },
+            { 
+                name: "QA-инженер (Автоматизация)", 
+                scores: { R:50, I:70, A:0, S:10, E:10, C:100 }, 
+                spheres: { main: "Tech", sec: "Sign" },
+                desc: `<b>Результат:</b> Высокое внимание к деталям и критическое мышление.<br><br><b>Профиль:</b> Специалист по качеству. Вы умеете находить уязвимые места в логике и предотвращать ошибки.<br><br><b>Суть работы:</b> Написание программных скриптов, которые автоматически тестируют приложения и сайты на наличие ошибок.<br><br><b>Плюсы/Минусы:</b> Понятный путь входа в программирование / Монотонность процессов.<br><br><b>Совет:</b> Попробуйте найти ошибки на любом сайте и опишите алгоритм их воспроизведения.` 
+            },
+            { 
+                name: "Data Scientist / ИИ-аналитик", 
+                scores: { R:10, I:100, A:20, S:0, E:20, C:70 }, 
+                spheres: { main: "Sign", sec: "Tech" },
+                desc: `<b>Результат:</b> Исследовательский склад ума.<br><br><b>Профиль:</b> Аналитик данных. Вы опираетесь на факты, статистику и математическое моделирование.<br><br><b>Суть работы:</b> Сбор и анализ больших массивов данных, обучение нейросетей для прогнозирования событий.<br><br><b>Плюсы/Минусы:</b> Работа на острие технологий / Требует глубоких знаний математики и статистики.<br><br><b>Совет:</b> Освежите знания по теории вероятностей и начните изучать библиотеки Python для анализа данных (Pandas).` 
+            },
+            { 
+                name: "Специалист по кибербезопасности", 
+                scores: { R:60, I:90, A:10, S:10, E:40, C:80 }, 
+                spheres: { main: "Tech", sec: "Sign" },
+                desc: `<b>Результат:</b> Аналитический ум и ответственность.<br><br><b>Профиль:</b> Специалист по защите информации. Вы способны предугадывать угрозы и выстраивать защиту.<br><br><b>Суть работы:</b> Поиск уязвимостей в системах, предотвращение взломов и расследование инцидентов.<br><br><b>Плюсы/Минусы:</b> Высокая значимость и востребованность / Высокий уровень стресса и ответственности.<br><br><b>Совет:</b> Изучите виды сетевых угроз и основы криптографии.` 
+            },
+            { 
+                name: "Разработчик игр (GameDev)", 
+                scores: { R:50, I:80, A:70, S:20, E:20, C:40 }, 
+                spheres: { main: "Tech", sec: "Art" },
+                desc: `<b>Результат:</b> Сочетание инженерных и творческих навыков.<br><br><b>Профиль:</b> Разработчик интерактивных систем. Вам интересно решать сложные технические задачи ради развлекательного результата.<br><br><b>Суть работы:</b> Программирование игровой логики, физики объектов и взаимодействия игрока с миром.<br><br><b>Плюсы/Минусы:</b> Интересные нетривиальные задачи / Возможны переработки перед релизом проекта.<br><br><b>Совет:</b> Скачайте игровой движок (Unity или Unreal Engine) и создайте простейшую механику движения персонажа.` 
+            },
+
+            // --- BUSINESS & MANAGEMENT ---
+            { 
+                name: "Продакт-менеджер", 
+                scores: { R:20, I:70, A:40, S:70, E:100, C:50 }, 
+                spheres: { main: "Biz", sec: "Tech" },
+                desc: `<b>Результат:</b> Стратегическое мышление и лидерские качества.<br><br><b>Профиль:</b> Управляющий продуктом. Вы способны объединить требования бизнеса, потребности пользователей и возможности разработки.<br><br><b>Суть работы:</b> Исследование рынка, приоритизация задач, формирование стратегии развития продукта.<br><br><b>Плюсы/Минусы:</b> Влияние на развитие компании / Ответственность за неверные бизнес-решения.<br><br><b>Совет:</b> Выберите любое приложение и опишите 3 гипотезы, как можно увеличить его прибыль.` 
+            },
+            { 
+                name: "Проджект-менеджер", 
+                scores: { R:30, I:50, A:10, S:80, E:90, C:80 }, 
+                spheres: { main: "Biz", sec: "Social" },
+                desc: `<b>Результат:</b> Высокие организаторские способности.<br><br><b>Профиль:</b> Администратор процессов. Ваша сильная сторона — планирование, контроль сроков и коммуникация.<br><br><b>Суть работы:</b> Координация работы команды, управление ресурсами и рисками, обеспечение сдачи проекта в срок.<br><br><b>Плюсы/Минусы:</b> Разноплановые задачи и общение / Постоянная работа в условиях дедлайнов.<br><br><b>Совет:</b> Попробуйте спланировать сложный проект (например, ремонт или поездку) с диаграммой Ганта и бюджетом.` 
+            },
+            { 
+                name: "Бизнес-аналитик", 
+                scores: { R:10, I:90, A:10, S:40, E:60, C:90 }, 
+                spheres: { main: "Sign", sec: "Biz" },
+                desc: `<b>Результат:</b> Склонность к структурированию информации.<br><br><b>Профиль:</b> Архитектор процессов. Вы умеете переводить абстрактные требования бизнеса в четкие технические задания.<br><br><b>Суть работы:</b> Описание бизнес-процессов, выявление "узких мест" и предложение решений для оптимизации.<br><br><b>Плюсы/Минусы:</b> Четкий и логичный рабочий процесс / Большой объем работы с документацией.<br><br><b>Совет:</b> Изучите нотацию BPMN для моделирования бизнес-процессов.` 
+            },
+            { 
+                name: "Digital-маркетолог", 
+                scores: { R:10, I:70, A:60, S:40, E:90, C:50 }, 
+                spheres: { main: "Biz", sec: "Sign" },
+                desc: `<b>Результат:</b> Понимание психологии потребителя и аналитики.<br><br><b>Профиль:</b> Специалист по продвижению. Вы работаете на стыке креатива и цифр (статистики).<br><br><b>Суть работы:</b> Настройка рекламных кампаний, анализ воронок продаж, тестирование гипотез привлечения клиентов.<br><br><b>Плюсы/Минусы:</b> Возможность удаленной работы и фриланса / Нестабильность эффективности рекламных каналов.<br><br><b>Совет:</b> Изучите основы контекстной или таргетированной рекламы и веб-аналитики.` 
+            },
+            { 
+                name: "HR-Директор / Рекрутер", 
+                scores: { R:10, I:40, A:30, S:100, E:80, C:40 }, 
+                spheres: { main: "Social", sec: "Biz" },
+                desc: `<b>Результат:</b> Развитый эмоциональный интеллект.<br><br><b>Профиль:</b> Специалист по кадрам. Вы умеете оценивать потенциал людей и выстраивать коммуникацию.<br><br><b>Суть работы:</b> Поиск сотрудников, проведение собеседований, адаптация персонала и развитие корпоративной культуры.<br><br><b>Плюсы/Минусы:</b> Работа с людьми, прямое влияние на климат в компании / Эмоциональная нагрузка, необходимость увольнять сотрудников.<br><br><b>Совет:</b> Изучите методы оценки компетенций персонала.` 
+            },
+            { 
+                name: "Менеджер по продажам (B2B)", 
+                scores: { R:10, I:30, A:20, S:90, E:100, C:30 }, 
+                spheres: { main: "Biz", sec: "Social" },
+                desc: `<b>Результат:</b> Нацеленность на результат и коммуникабельность.<br><br><b>Профиль:</b> Переговорщик. Вам подходит работа в конкурентной среде, где доход зависит от ваших усилий.<br><br><b>Суть работы:</b> Поиск клиентов, проведение переговоров, презентация продуктов и заключение сделок.<br><br><b>Плюсы/Минусы:</b> Прямая зависимость дохода от результатов / Высокий уровень стресса и отказов.<br><br><b>Совет:</b> Изучите техники продаж (например, SPIN) и работы с возражениями.` 
+            },
+            { 
+                name: "Основатель стартапа", 
+                scores: { R:40, I:80, A:60, S:50, E:100, C:20 }, 
+                spheres: { main: "Biz", sec: "Tech" },
+                desc: `<b>Результат:</b> Предпринимательский склад ума и автономность.<br><br><b>Профиль:</b> Создатель бизнеса. Вы готовы действовать в условиях неопределенности и брать на себя полную ответственность.<br><br><b>Суть работы:</b> Поиск инвестиций, формирование команды, управление продуктом и операционная деятельность.<br><br><b>Плюсы/Минусы:</b> Отсутствие карьерного потолка / Высокие финансовые риски и ненормированный график.<br><br><b>Совет:</b> Изучите концепцию Lean Startup и попробуйте запустить минимальный продукт (MVP).` 
+            },
+
+            // --- CREATIVE & DESIGN ---
+            { 
+                name: "UX/UI Дизайнер", 
+                scores: { R:20, I:50, A:100, S:50, E:20, C:40 }, 
+                spheres: { main: "Art", sec: "Tech" },
+                desc: `<b>Результат:</b> Визуальное мышление и эмпатия.<br><br><b>Профиль:</b> Проектировщик интерфейсов. Вы фокусируетесь на удобстве использования продукта пользователем.<br><br><b>Суть работы:</b> Создание прототипов сайтов и приложений, подбор цветовых схем, шрифтов и логики взаимодействия.<br><br><b>Плюсы/Минусы:</b> Востребованная цифровая профессия / Субъективность оценки дизайна заказчиками.<br><br><b>Совет:</b> Установите Figma и попробуйте скопировать дизайн популярного приложения.` 
+            },
+            { 
+                name: "Графический / Бренд-дизайнер", 
+                scores: { R:30, I:20, A:100, S:30, E:40, C:20 }, 
+                spheres: { main: "Art", sec: "Biz" },
+                desc: `<b>Результат:</b> Способность передавать смыслы через образы.<br><br><b>Профиль:</b> Визуальный коммуникатор. Вы решаете бизнес-задачи с помощью графики.<br><br><b>Суть работы:</b> Разработка логотипов, фирменного стиля, рекламных макетов и упаковки.<br><br><b>Плюсы/Минусы:</b> Разнообразие проектов и сфер / Высокая конкуренция на рынке фриланса.<br><br><b>Совет:</b> Соберите портфолио, придумав редизайн для известных брендов.` 
+            },
+            { 
+                name: "3D-художник / Моушн-дизайнер", 
+                scores: { R:40, I:40, A:100, S:10, E:10, C:50 }, 
+                spheres: { main: "Art", sec: "Tech" },
+                desc: `<b>Результат:</b> Пространственное мышление.<br><br><b>Профиль:</b> Специалист по компьютерной графике. Вам интересно работать с объемом, светом и анимацией.<br><br><b>Суть работы:</b> Моделирование объектов, персонажей и окружения для игр, кино или рекламы.<br><br><b>Плюсы/Минусы:</b> Работа в индустрии развлечений / Высокие требования к "железу" компьютера.<br><br><b>Совет:</b> Начните изучение программы Blender с базовых уроков по моделированию.` 
+            },
+            { 
+                name: "Контент-мейкер / Блогер", 
+                scores: { R:20, I:40, A:100, S:80, E:60, C:10 }, 
+                spheres: { main: "Art", sec: "Social" },
+                desc: `<b>Результат:</b> Креативность и навыки самопрезентации.<br><br><b>Профиль:</b> Медиа-автор. Вы умеете создавать вовлекающий контент и удерживать внимание аудитории.<br><br><b>Суть работы:</b> Написание сценариев, видеосъемка, монтаж и взаимодействие с подписчиками.<br><br><b>Плюсы/Минусы:</b> Свободный график и творческая реализация / Нестабильность дохода и зависимость от алгоритмов платформ.<br><br><b>Совет:</b> Начните регулярно публиковать контент на одной выбранной платформе.` 
+            },
+            { 
+                name: "Архитектор (BIM)", 
+                scores: { R:60, I:70, A:90, S:30, E:40, C:60 }, 
+                spheres: { main: "Art", sec: "Tech" },
+                desc: `<b>Результат:</b> Инженерно-художественное мышление.<br><br><b>Профиль:</b> Проектировщик среды. Вы сочетаете творческий подход с точными расчетами и знанием нормативов.<br><br><b>Суть работы:</b> Разработка планов зданий, создание информационных моделей (BIM), авторский надзор за строительством.<br><br><b>Плюсы/Минусы:</b> Осязаемый результат работы (построенные здания) / Высокая юридическая ответственность.<br><br><b>Совет:</b> Развивайте навыки черчения и изучите программы для проектирования (AutoCAD, Revit).` 
+            },
+            { 
+                name: "Саунд-дизайнер / Музыкант", 
+                scores: { R:30, I:40, A:100, S:30, E:20, C:30 }, 
+                spheres: { main: "Art", sec: "Tech" },
+                desc: `<b>Результат:</b> Острый слух и чувство ритма.<br><br><b>Профиль:</b> Специалист по аудио. Вы работаете со звуковыми волнами для создания атмосферы.<br><br><b>Суть работы:</b> Написание музыки, создание звуковых эффектов (шумов), сведение и мастеринг треков.<br><br><b>Плюсы/Минусы:</b> Уникальная творческая специализация / Дорогостоящее оборудование и ПО.<br><br><b>Совет:</b> Освойте любой секвенсор (DAW) для написания музыки на компьютере.` 
+            },
+
+            // --- SCIENCE & BIO ---
+            { 
+                name: "Хирург / Врач", 
+                scores: { R:90, I:90, A:10, S:80, E:20, C:50 }, 
+                spheres: { main: "Bio", sec: "Social" },
+                desc: `<b>Результат:</b> Высокая стрессоустойчивость и желание помогать.<br><br><b>Профиль:</b> Клиницист. Профессия требует глубоких академических знаний и готовности к постоянному обучению.<br><br><b>Суть работы:</b> Диагностика заболеваний, проведение лечебных процедур или операций, ведение пациентов.<br><br><b>Плюсы/Минусы:</b> Высокая социальная значимость и статус / Длительный срок обучения и высокая ответственность за жизнь.<br><br><b>Совет:</b> Углубленное изучение биологии и химии является обязательным фундаментом.` 
+            },
+            { 
+                name: "Биотехнолог / Генетик", 
+                scores: { R:40, I:100, A:20, S:20, E:10, C:60 }, 
+                spheres: { main: "Bio", sec: "Tech" },
+                desc: `<b>Результат:</b> Научный интерес к естествознанию.<br><br><b>Профиль:</b> Исследователь. Вам подходит лабораторная работа на стыке биологии и технологий.<br><br><b>Суть работы:</b> Разработка новых лекарственных препаратов, модификация агрокультур, генетические исследования.<br><br><b>Плюсы/Минусы:</b> Вклад в развитие науки и прогресса / Работа требует высокой точности и терпения.<br><br><b>Совет:</b> Следите за научными публикациями в сфере генной инженерии.` 
+            },
+            { 
+                name: "Эколог / Урбанист", 
+                scores: { R:50, I:80, A:40, S:60, E:40, C:50 }, 
+                spheres: { main: "Bio", sec: "Social" },
+                desc: `<b>Результат:</b> Системный подход к окружающей среде.<br><br><b>Профиль:</b> Специалист по устойчивому развитию. Вы рассматриваете город или природу как единую экосистему.<br><br><b>Суть работы:</b> Оценка воздействия на окружающую среду, проектирование комфортных городских пространств.<br><br><b>Плюсы/Минусы:</b> Работа на благо общества и планеты / Частое столкновение с бюрократическими препятствиями.<br><br><b>Совет:</b> Изучите принципы устойчивого развития (ESG) и современной урбанистики.` 
+            },
+            { 
+                name: "Психотерапевт", 
+                scores: { R:10, I:80, A:40, S:100, E:20, C:20 }, 
+                spheres: { main: "Social", sec: "Bio" },
+                desc: `<b>Результат:</b> Эмпатия и аналитические способности.<br><br><b>Профиль:</b> Специалист помогающей профессии. Вы умеете слушать и анализировать поведение людей.<br><br><b>Суть работы:</b> Консультирование клиентов, помощь в преодолении кризисных ситуаций, коррекция поведения.<br><br><b>Плюсы/Минусы:</b> Помощь людям в улучшении качества жизни / Риск профессионального эмоционального выгорания.<br><br><b>Совет:</b> Начните с изучения общей психологии и различных школ психотерапии.` 
+            },
+
+            // --- ENGINEERING & REALISTIC ---
+            { 
+                name: "Инженер-Конструктор", 
+                scores: { R:100, I:80, A:20, S:10, E:20, C:60 }, 
+                spheres: { main: "Tech", sec: "R" },
+                desc: `<b>Результат:</b> Технический склад ума.<br><br><b>Профиль:</b> Создатель механизмов. Вы понимаете физику процессов и принципы работы устройств.<br><br><b>Суть работы:</b> Проектирование деталей, узлов и механизмов, создание чертежей и прототипов.<br><br><b>Плюсы/Минусы:</b> Работа с реальными осязаемыми объектами / Высокие требования к точности расчетов.<br><br><b>Совет:</b> Развивайте навыки работы в CAD-системах (программы для проектирования).` 
+            },
+            { 
+                name: "Пилот Гражданской Авиации", 
+                scores: { R:100, I:60, A:10, S:20, E:30, C:80 }, 
+                spheres: { main: "Tech", sec: "R" },
+                desc: `<b>Результат:</b> Дисциплина и скорость реакции.<br><br><b>Профиль:</b> Оператор сложной техники. Профессия требует строгого следования инструкциям и эмоциональной стабильности.<br><br><b>Суть работы:</b> Управление воздушным судном, навигация, обеспечение безопасности пассажиров.<br><br><b>Плюсы/Минусы:</b> Высокий доход и возможность путешествовать / Нерегулярный график и влияние на здоровье.<br><br><b>Совет:</b> Для начала пройдите ознакомительный полет на авиасимуляторе.` 
+            },
+            { 
+                name: "Шеф-повар", 
+                scores: { R:90, I:30, A:80, S:40, E:60, C:50 }, 
+                spheres: { main: "Art", sec: "R" }, 
+                desc: `<b>Результат:</b> Организаторские навыки и вкус.<br><br><b>Профиль:</b> Руководитель производства. Вы сочетаете творчество в кулинарии с жестким менеджментом процессов.<br><br><b>Суть работы:</b> Разработка меню, приготовление блюд, управление командой поваров, контроль качества.<br><br><b>Плюсы/Минусы:</b> Возможность творческой реализации / Тяжелые физические условия труда (работа на ногах).<br><br><b>Совет:</b> Попробуйте освоить базовые техники нарезки и термообработки продуктов.` 
+            },
+             { 
+                name: "Агроном / Фермер 2.0", 
+                scores: { R:90, I:60, A:10, S:20, E:50, C:40 }, 
+                spheres: { main: "Bio", sec: "Tech" },
+                desc: `<b>Результат:</b> Интерес к агротехнологиям.<br><br><b>Профиль:</b> Технолог сельского хозяйства. Вы используете современные методы для управления урожаем.<br><br><b>Суть работы:</b> Планирование посевов, контроль состояния почв и растений, использование автоматизации (дроны, датчики).<br><br><b>Плюсы/Минусы:</b> Работа на природе с использованием технологий / Сезонность и зависимость от погодных условий.<br><br><b>Совет:</b> Изучите современные методы гидропоники или сити-фермерства.` 
+            }
+        ];
+
+        // --- 4. ЛОГИКА ---
+        let currentQuestionIndex = 0;
+        let userScores = { R:0, I:0, A:0, S:0, E:0, C:0 };
+        let userSpheres = { Tech:0, Bio:0, Art:0, Social:0, Biz:0, Sign:0 }; 
+        let userValues = { Money:0, Free:0, Safe:0, Res:0 }; 
+
+        let timerInterval;
+        let secondsElapsed = 0;
+
+        // Защита от F5
+        window.addEventListener('beforeunload', function (e) {
+            if (currentQuestionIndex > 0 && document.getElementById('result-container').classList.contains('hidden')) {
+                e.preventDefault(); e.returnValue = '';
+            }
+        });
+
+        function updateTimer() {
+            secondsElapsed++;
+            const minutes = Math.floor(secondsElapsed / 60);
+            const seconds = secondsElapsed % 60;
+            document.getElementById('timer').innerText = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+        }
+
+        function startTest() {
+            document.getElementById('intro-container').classList.add('hidden');
+            timerInterval = setInterval(updateTimer, 1000);
+            showLevelScreen(0);
+        }
+
+        function showLevelScreen(levelIndex) {
+            const levelScreen = document.getElementById('level-screen');
+            document.getElementById('level-title').innerText = levels[levelIndex].title;
+            document.getElementById('level-desc').innerText = levels[levelIndex].desc;
+            levelScreen.classList.remove('hidden');
+            document.getElementById('quiz-container').classList.add('hidden');
+        }
+
+        function nextLevel() {
+            document.getElementById('level-screen').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestionIndex];
+            
+            let currentLevel = 1;
+            if (currentQuestionIndex >= 10) currentLevel = 2;
+            if (currentQuestionIndex >= 20) currentLevel = 3;
+            document.getElementById('level-indicator').innerText = levels[currentLevel-1].title;
+
+            // --- ИСПРАВЛЕННЫЙ ПРОГРЕСС БАР ---
+            let questionInLevel = (currentQuestionIndex % 10) + 1; // 1..10
+            const progress = (questionInLevel / 10) * 100; // 10%..100%
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+
+            document.getElementById('question-number').innerText = `ВОПРОС ${questionInLevel < 10 ? '0'+questionInLevel : questionInLevel} / 10`;
+            document.getElementById('question-text').innerText = q.text;
+            
+            const answersBox = document.getElementById('answers-box');
+            answersBox.innerHTML = '';
+
+            q.answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.innerText = answer.text;
+                btn.onclick = () => handleAnswer(answer);
+                answersBox.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(answer) {
+            // Сбор данных
+            if (answer.weights) for (let k in answer.weights) userScores[k] += answer.weights[k];
+            if (answer.spheres) for (let k in answer.spheres) userSpheres[k] += answer.spheres[k];
+            if (answer.values) for (let k in answer.values) userValues[k] += answer.values[k];
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex === 10) showLevelScreen(1);
+            else if (currentQuestionIndex === 20) showLevelScreen(2);
+            else if (currentQuestionIndex < questions.length) showQuestion();
+            else showResult();
+        }
+
+        function showResult() {
+            clearInterval(timerInterval);
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('result-container').classList.remove('hidden');
+
+            const minutes = Math.floor(secondsElapsed / 60);
+            const seconds = secondsElapsed % 60;
+            document.getElementById('final-time').innerText = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+            let maxUserScore = 1;
+            ['R','I','A','S','E','C'].forEach(l => { if (userScores[l] > maxUserScore) maxUserScore = userScores[l]; });
+
+            // --- АЛГОРИТМ V3.0: ЖЕСТКИЙ ПОТОЛОК (HARD CAPS) ---
+            professions.forEach(prof => {
+                // 1. RIASEC (0-100)
+                let totalDiff = 0;
+                ['R','I','A','S','E','C'].forEach(letter => {
+                    let u = (userScores[letter] / maxUserScore) * 100;
+                    totalDiff += Math.abs(u - prof.scores[letter]);
+                });
+                let riasecScore = Math.max(0, 100 - (totalDiff / 4)); // Чуть мягче делим, чтобы база была высокой
+
+                // 2. СФЕРЫ-ГЕЙТКИПЕРЫ
+                let sphereBonus = 0;
+                let maxPossibleScore = 100; // По умолчанию потолок 100%
+
+                if (prof.spheres) {
+                    let main = userSpheres[prof.spheres.main] || 0;
+                    let sec = userSpheres[prof.spheres.sec] || 0;
+
+                    if (main > 0) {
+                        sphereBonus += 10; // Ты любишь это -> Бонус
+                    } else if (main === 0) {
+                        sphereBonus -= 5; 
+                        maxPossibleScore = 75; // НЕЙТРАЛЬНО -> ПОТОЛОК 75%. Нельзя быть врачом, если тебе "норм".
+                    } else {
+                        sphereBonus -= 40; 
+                        maxPossibleScore = 40; // НЕНАВИСТЬ -> ПОТОЛОК 40%. Убийство профессии.
+                    }
+
+                    if (sec > 0) sphereBonus += 5;
+                    else if (sec < 0) sphereBonus -= 10;
+                }
+
+                // Итог с учетом потолка
+                let final = riasecScore + sphereBonus;
+                prof.match = Math.min(maxPossibleScore, Math.max(0, Math.round(final)));
+            });
+
+            professions.sort((a, b) => b.match - a.match);
+
+            // Вывод
+            const best = professions[0];
+            document.getElementById('profession-name').innerText = best.name;
+            document.getElementById('profession-desc').innerHTML = best.desc;
+            document.getElementById('match-percent-1').innerText = best.match + "%";
+
+            if (professions[1]) {
+                document.getElementById('prof-2-name').innerText = professions[1].name;
+                document.getElementById('prof-2-percent').innerText = professions[1].match + "%";
+            }
+            if (professions[2]) {
+                document.getElementById('prof-3-name').innerText = professions[2].name;
+                document.getElementById('prof-3-percent').innerText = professions[2].match + "%";
+            }
+
+            // График
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            const dataValues = [userScores.R, userScores.I, userScores.A, userScores.S, userScores.E, userScores.C];
+
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['РЕАЛИСТ', 'АНАЛИТИК', 'ТВОРЕЦ', 'СОЦИАЛ', 'ЛИДЕР', 'СИСТЕМНЫЙ'],
+                    datasets: [{
+                        label: 'Профиль',
+                        data: dataValues,
+                        backgroundColor: 'rgba(26, 26, 26, 0.2)', 
+                        borderColor: '#1A1A1A', 
+                        borderWidth: 2,
+                        pointBackgroundColor: '#F2F0EB', 
+                        pointBorderColor: '#1A1A1A',
+                        pointHoverBackgroundColor: '#1A1A1A',
+                        pointRadius: 4,
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: { color: '#E5E5E5' }, 
+                            grid: { color: '#E5E5E5' },
+                            ticks: { display: false, backdropColor: 'transparent' },
+                            pointLabels: {
+                                color: '#1A1A1A',
+                                font: { size: 10, family: "'Inter', sans-serif", weight: '700' }
+                            },
+                            suggestedMin: 0,
+                        }
+                    },
+                    plugins: { legend: { display: false } },
+                    animation: { duration: 2000, easing: 'easeInOutQuart' }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
