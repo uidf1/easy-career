@@ -1446,6 +1446,11 @@
     }
 
     function finish() {
+        if (typeof ym === 'function') {
+            ym(106678713, 'reachGoal', 'test_finished'); 
+        }
+
+                
         nextScreen('result');
         
         let code = "";
@@ -1604,3 +1609,4 @@
 </script>
 </body>
 </html>
+
