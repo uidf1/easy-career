@@ -192,156 +192,296 @@
             h1 { font-size: 2.2em; }
             .slider-labels { font-size: 0.7em; }
         }
+        #exit-btn {
+        position: absolute;
+        top: 25px;
+        right: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #AAA;
+        cursor: pointer;
+        background: none;
+        border: none;
+        text-transform: uppercase;
+        z-index: 100;
+        transition: color 0.3s;
+    }
+    #exit-btn:hover {
+        color: var(--ink); /* Станет черной при наведении */
+    }
+
+    /* Модальное окно (фон) */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(255, 255, 255, 0.8); /* Белый полупрозрачный */
+        backdrop-filter: blur(8px); /* Эффект размытия */
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    /* Само окно */
+    .modal-box {
+        background: #FFF;
+        border: 1px solid #E5E5E5;
+        padding: 40px;
+        max-width: 380px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .modal-text { font-size: 14px; color: #666; margin-bottom: 30px; line-height: 1.5; }
+    
+    .modal-actions { display: flex; gap: 15px; justify-content: center; }
+    .btn-cancel {
+        padding: 12px 25px;
+        border: 1px solid #E5E5E5;
+        background: #FFF;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-confirm {
+        padding: 12px 25px;
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: #FFF;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-group {
+        display: flex;
+        gap: 15px; /* Расстояние между кнопками */
+        margin-top: 40px;
+    }
+    .btn-share {
+        flex: 1; /* Занимает половину ширины */
+        padding: 22px;
+        background: #FFF;
+        border: 1px solid var(--ink);
+        color: var(--ink);
+        font-weight: 600;
+        font-size: 1.1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: background 0.2s;
+    }
+    .btn-share:hover { background: #F5F5F5; }
+
+    /* 2. Иконка стрелочки в аккордеоне */
+    .acc-icon-svg {
+        width: 24px;
+        height: 24px;
+        transition: transform 0.3s ease; /* Плавный поворот */
+        opacity: 0.4;
+    }
+    /* Когда открыто - поворачиваем на 180 градусов */
+    .acc-item.open .acc-icon-svg {
+        transform: rotate(180deg);
+        opacity: 1;
+    }
+
+    /* 3. Анимация вылета списка профессий */
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .job-row {
+        /* Изначально скрыто, анимация добавится через JS */
+        opacity: 0; 
+        animation: slideUpFade 0.5s ease forwards;
+    }
     </style>
 </head>
 <body>
+    <button id="exit-btn" onclick="openModal()">На главную</button>
 
-<div class="card fade-in">
-    
-    <div id="view-intro" class="content-area" style="justify-content: center;">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <span class="label">EASY CAREER 12.0</span>
-            <h1>Профессиональный профиль</h1>
-            <p>
-                Алгоритмический анализ личности. 
-                Мы объединили MBTI и RIASEC, чтобы построить вашу точную карьерную карту.
-            </p>
-            <div style="margin-bottom: 40px; padding-top: 20px; border-top: 1px solid var(--line);">
-                <div style="font-size: 0.9em; color: var(--ink); font-weight: 600; margin-bottom: 15px;">ЭТАПЫ АНАЛИЗА:</div>
-                <div style="color: var(--gray); font-size: 0.95em; line-height: 1.8;">
-                    01. Стиль мышления<br>
-                    02. Глубинные интересы<br>
-                    03. Кейсы<br>
-                    04. Ценности
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">Начать заново?</div>
+            <div class="modal-text">Текущий прогресс будет потерян. Вы вернетесь на стартовый экран.</div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="btn-confirm" onclick="resetTest()">Да, сбросить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card fade-in">
+        <div id="view-intro" class="content-area" style="justify-content: center;">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <span class="label">EASY CAREER 12.0</span>
+                <h1>Профессиональный профиль</h1>
+                <p>
+                    Алгоритмический анализ личности. 
+                    Мы объединили MBTI и RIASEC, чтобы построить вашу точную карьерную карту.
+                </p>
+                <div style="margin-bottom: 40px; padding-top: 20px; border-top: 1px solid var(--line);">
+                    <div style="font-size: 0.9em; color: var(--ink); font-weight: 600; margin-bottom: 15px;">ЭТАПЫ АНАЛИЗА:</div>
+                    <div style="color: var(--gray); font-size: 0.95em; line-height: 1.8;">
+                        01. Стиль мышления<br>
+                        02. Глубинные интересы<br>
+                        03. Кейсы<br>
+                        04. Ценности
+                    </div>
+                </div>
+                <button class="btn btn-main" onclick="nextScreen('level')">Начать анализ</button>
+            </div>
+        </div>
+
+        <div id="view-level" class="content-area hidden" style="justify-content: center; text-align: center;">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <span class="label" id="lvl-num">БЛОК 1</span>
+                <h1 id="lvl-title">Базовые настройки</h1>
+                <p id="lvl-desc">Определим ваш способ взаимодействия с миром.</p>
+                <button class="btn btn-main" style="width: auto; padding-left: 60px; padding-right: 60px;" onclick="startQuiz()">Приступить</button>
+            </div>
+        </div>
+
+        <div id="view-quiz" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="progress-track"><div class="progress-fill" id="bar"></div></div>
+            
+            <div class="content-area">
+                <div class="quiz-wrapper">
+                    <span class="label" id="q-counter">ВОПРОС 1 / 10</span>
+                    <h2 id="q-text">...</h2>
+
+                    <div id="type-btn" class="hidden"></div>
+
+                    <div id="type-slide" class="hidden">
+                        <div class="slider-wrap">
+                            <div class="ticks">
+                                <div class="tick big"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div>
+                                <div class="tick big"></div>
+                                <div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick big"></div>
+                            </div>
+                            <input type="range" min="0" max="10" value="5" id="slider">
+                        </div>
+                        
+                        <div class="slider-labels">
+                            <span style="width:33%">Полностью<br>несогласен</span>
+                            <span style="width:33%" class="text-center">Нейтрально</span>
+                            <span style="width:33%" class="text-right">Полностью<br>согласен</span>
+                        </div>
+
+                        <button class="btn btn-main" onclick="submitSlide()">Подтвердить</button>
+                    </div>
                 </div>
             </div>
-            <button class="btn btn-main" onclick="nextScreen('level')">Начать анализ</button>
         </div>
-    </div>
 
-    <div id="view-level" class="content-area hidden" style="justify-content: center; text-align: center;">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <span class="label" id="lvl-num">БЛОК 1</span>
-            <h1 id="lvl-title">Базовые настройки</h1>
-            <p id="lvl-desc">Определим ваш способ взаимодействия с миром.</p>
-            <button class="btn btn-main" style="width: auto; padding-left: 60px; padding-right: 60px;" onclick="startQuiz()">Приступить</button>
-        </div>
-    </div>
+        <div id="view-result" class="content-area hidden">
+            <div style="max-width: 700px; margin: 0 auto; width: 100%;">
+                <span class="label">ВАШ ПРОФИЛЬ</span>
+                <h1 id="res-code" style="margin-bottom: 5px;">...</h1>
+                <div id="res-name" style="font-size: 1.4em; color: var(--gray); margin-bottom: 40px;">...</div>
 
-    <div id="view-quiz" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
-        <div class="progress-track"><div class="progress-fill" id="bar"></div></div>
-        
-        <div class="content-area">
-            <div class="quiz-wrapper">
-                <span class="label" id="q-counter">ВОПРОС 1 / 10</span>
-                <h2 id="q-text">...</h2>
+                <div style="width: 80%; max-width: 450px; margin: 0 auto 40px auto; padding: 20px 0; border-bottom: 1px solid var(--line);">
+                    <canvas id="radarChart"></canvas>
+                </div>
 
-                <div id="type-btn" class="hidden"></div>
-
-                <div id="type-slide" class="hidden">
-                    <div class="slider-wrap">
-                        <div class="ticks">
-                            <div class="tick big"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div>
-                            <div class="tick big"></div>
-                            <div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick big"></div>
+                <div style="margin-top: 30px;">
+            
+                    <div class="acc-item open">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Характеристика личности</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </div>
-                        <input type="range" min="0" max="10" value="5" id="slider">
+                        <div class="acc-body" id="res-desc">...</div>
                     </div>
                     
-                    <div class="slider-labels">
-                        <span style="width:33%">Полностью<br>несогласен</span>
-                        <span style="width:33%" class="text-center">Нейтрально</span>
-                        <span style="width:33%" class="text-right">Полностью<br>согласен</span>
+                    <div class="acc-item">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Сильные стороны</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="acc-body" id="res-strengths">...</div>
                     </div>
 
-                    <button class="btn btn-main" onclick="submitSlide()">Подтвердить</button>
+                    <div class="acc-item">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Зоны роста и слабости</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="acc-body" id="res-weaknesses">...</div>
+                    </div>
+
+                    <div class="acc-item">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Что вызывает стресс?</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="acc-body" id="res-stress">...</div>
+                    </div>
+
+                    <div class="acc-item">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Взаимоотношения с людьми</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="acc-body" id="res-relations">...</div>
+                    </div>
+
+                    <div class="acc-item">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Любовь и семья</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="acc-body" id="res-love">...</div>
+                    </div>
+
+                    <div class="acc-item">
+                        <div class="acc-head" onclick="toggle(this)">
+                            <span>Карьерная стратегия</span>
+                            <svg class="acc-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="acc-body">
+                            <p style="margin-bottom: 15px; font-weight: 600;">Ваш топ профессий:</p>
+                            <div id="jobs-list"></div>
+
+                            <div id="top-job-advice" style="background: #F4F4F4; padding: 20px; margin-top: 30px; border-left: 4px solid var(--ink);">
+                                ...
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <div id="view-result" class="content-area hidden">
-        <div style="max-width: 700px; margin: 0 auto; width: 100%;">
-            <span class="label">ВАШ ПРОФИЛЬ</span>
-            <h1 id="res-code" style="margin-bottom: 5px;">...</h1>
-            <div id="res-name" style="font-size: 1.4em; color: var(--gray); margin-bottom: 40px;">...</div>
+                <div class="btn-group">
+                    <button class="btn-share" onclick="shareResult()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span id="share-text">Поделиться</span>
+                    </button>
 
-            <div style="width: 80%; max-width: 450px; margin: 0 auto 40px auto; padding: 20px 0; border-bottom: 1px solid var(--line);">
-                <canvas id="radarChart"></canvas>
-            </div>
-
-            <div style="margin-top: 30px;">
-        
-        <div class="acc-item open">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Характеристика личности</span>
-                <span class="acc-icon">−</span> </div>
-            <div class="acc-body" id="res-desc">...</div>
-        </div>
-        
-        <div class="acc-item">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Сильные стороны</span>
-                <span class="acc-icon">+</span>
-            </div>
-            <div class="acc-body" id="res-strengths">...</div>
-        </div>
-
-        <div class="acc-item">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Зоны роста и слабости</span>
-                <span class="acc-icon">+</span>
-            </div>
-            <div class="acc-body" id="res-weaknesses">...</div>
-        </div>
-
-        <div class="acc-item">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Что вызывает стресс?</span>
-                <span class="acc-icon">+</span>
-            </div>
-            <div class="acc-body" id="res-stress">...</div>
-        </div>
-
-        <div class="acc-item">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Взаимоотношения с людьми</span>
-                <span class="acc-icon">+</span>
-            </div>
-            <div class="acc-body" id="res-relations">...</div>
-        </div>
-
-        <div class="acc-item">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Любовь и семья</span>
-                <span class="acc-icon">+</span>
-            </div>
-            <div class="acc-body" id="res-love">...</div>
-        </div>
-
-        <div class="acc-item">
-            <div class="acc-head" onclick="toggle(this)">
-                <span>Карьерная стратегия</span>
-                <span class="acc-icon">+</span>
-            </div>
-            <div class="acc-body">
-                <div id="top-job-advice" style="background: #F4F4F4; padding: 20px; border-radius: 0px; margin-bottom: 25px; border-left: 4px solid var(--ink);">
-                    ...
+                    <button class="btn-main" onclick="resetTest()" style="margin:0; flex:1;">Новый анализ</button>
                 </div>
-                <p style="margin-bottom: 15px; font-weight: 600;">Ваш топ профессий:</p>
-                <div id="jobs-list"></div>
+
             </div>
         </div>
     </div>
-
-            <button class="btn btn-main" style="margin-top: 50px; margin-bottom: 20px;" onclick="location.reload()">Новый анализ</button>
-        </div>
-    </div>
-
-</div>
 
 <script>
-    // --- КОНТЕНТ (40 вопросов) ---
+    // --- 1. БАЗА ВОПРОСОВ ---
     const levels = [
         // БЛОК 1: ПСИХОТИП (MBTI)
         {
@@ -383,18 +523,16 @@
             ]
         },
 
-        // БЛОК 3: НАВЫКИ И РЕАЛЬНОСТЬ (GPS-НАВИГАЦИЯ) — ЭТО НОВОЕ!
+        // БЛОК 3: НАВЫКИ И РЕАЛЬНОСТЬ
         {
             title: "Реальность",
             desc: "Блок 3 из 5. Честная оценка ваших возможностей.",
             qs: [
-                // ПЕРЕПИСАННЫЕ ВОПРОСЫ ПОД "СОГЛАСЕН/НЕ СОГЛАСЕН"
                 { type: "slide", text: "У меня отличные способности к математике и логике.", skill: "math" }, 
                 { type: "slide", text: "Я обладаю высокой физической силой и выносливостью.", skill: "phys" },
                 { type: "slide", text: "У меня хорошо развито чувство стиля и умение рисовать.", skill: "art" },
                 { type: "slide", text: "Я легко справляюсь с высоким уровнем стресса и давлением.", skill: "stress" },
                 
-                // Фильтры (кнопки) оставляем как было
                 { type: "btn", text: "Готовы учиться 6+ лет (Медицина/Наука)?", opts: [
                     {t:"Да, готов посвятить жизнь", filter:{studyLong:true}}, 
                     {t:"Нет, хочу работать быстрее", filter:{studyLong:false}}
@@ -412,11 +550,9 @@
                     {t:"Нет, только головой", filter:{manual:false}} 
                 ]},
                 
-                // ПЕРЕПИСАННЫЕ ВОПРОСЫ ПОД "СОГЛАСЕН/НЕ СОГЛАСЕН"
                 { type: "slide", text: "Я свободно владею иностранными языками.", skill: "lang" },
                 { type: "slide", text: "Я уверенно чувствую себя, выступая перед большой публикой.", skill: "speak" },
                 
-                // Фильтры (кнопки) оставляем как было
                 { type: "btn", text: "Предпочтительный график?", opts: [
                     {t:"Четкий 5/2 с 9 до 18", filter:{schedule:true}}, 
                     {t:"Гибкий / Ненормированный", filter:{schedule:false}} 
@@ -435,8 +571,8 @@
             qs: [
                 { type: "btn", text: "Вам дали бюджет. Что откроете?", opts: [{t:"IT-компанию", r:{I:3, R:2}}, {t:"Арт-пространство", r:{A:4}}] },
                 { type: "btn", text: "Любимый школьный предмет?", opts: [{t:"Алгебра/Физика", r:{I:3}}, {t:"Литература/История", r:{A:2, S:2}}] },
-                { type: "slide", text: "Я бы хотел проводить сложные операции.", t_r:"R" }, // + Хирург
-                { type: "slide", text: "Я бы хотел проектировать небоскребы.", t_r:"A" }, // + Архитектор
+                { type: "slide", text: "Я бы хотел проводить сложные операции.", t_r:"R" }, 
+                { type: "slide", text: "Я бы хотел проектировать небоскребы.", t_r:"A" }, 
                 { type: "btn", text: "Роль в проекте?", opts: [{t:"Лидер-организатор", r:{E:3}}, {t:"Эксперт-исполнитель", r:{R:2, I:2}}] },
                 { type: "btn", text: "Что выберете?", opts: [{t:"Общение с клиентами", r:{S:3}}, {t:"Анализ базы данных", r:{C:3}}] },
                 { type: "slide", text: "Меня не пугает однообразная работа.", t_r:"C" },
@@ -469,212 +605,71 @@
         }
     ];
 
-    // --- ПРОФЕССИИ ---
-   // --- 2. БАЗА ПРОФЕССИЙ (С СОВЕТАМИ) ---
+    // --- 2. БАЗА ПРОФЕССИЙ (С СОВЕТАМИ) ---
     const jobs = [
-        {
-            n:"Backend-разработчик", r:{R:20,I:100,A:10,S:0,E:10,C:60}, req:{math:7, remote:true, stress:5, study:true},
-            advice: "Начните с изучения Python или Go. Напишите свой первый API и разберитесь с базами данных (SQL). Сделайте пет-проект: например, телеграм-бота с админкой."
-        },
-        {
-            n:"Fullstack-разработчик", r:{R:30,I:90,A:30,S:10,E:20,C:50}, req:{math:6, remote:true, stress:6, study:true},
-            advice: "Вам нужно знать и 'лицо', и 'изнанку' сайта. Изучите HTML/CSS + JavaScript (React), а затем Node.js. Соберите простой интернет-магазин с нуля."
-        },
-        {
-            n:"Data Scientist", r:{R:10,I:100,A:10,S:0,E:20,C:80}, req:{math:9, remote:true, stress:4, study:true},
-            advice: "Освежите математическую статистику. Изучите Python (библиотеки Pandas, NumPy). Скачайте реальный датасет с Kaggle и попробуйте найти в нем закономерности."
-        },
-        {
-            n:"Кибербезопасность", r:{R:50,I:90,A:10,S:10,E:30,C:80}, req:{math:7, remote:true, stress:7, study:true},
-            advice: "Изучите, как работают сети (TCP/IP) и ОС Linux. Попробуйте пройти CTF-соревнования (Capture The Flag) для новичков, чтобы понять логику взлома и защиты."
-        },
-        {
-            n:"DevOps Инженер", r:{R:60,I:80,A:0,S:10,E:20,C:90}, req:{math:6, remote:true, stress:6, study:false},
-            advice: "Разберитесь с Docker и контейнерами. Изучите Linux на уровне администратора. Попробуйте настроить автоматическую сборку кода (CI/CD) на GitHub."
-        },
-        {
-            n:"Хирург", r:{R:90,I:80,A:10,S:60,E:20,C:40}, req:{blood:true, stress:10, manual:true, study:true, remote:false},
-            advice: "Это марафон на 8+ лет. Начните с углубленной биологии и химии. Попробуйте устроиться волонтером или санитаром в больницу, чтобы увидеть реальность без романтики."
-        },
-        {
-            n:"Стоматолог", r:{R:80,I:70,A:20,S:50,E:30,C:60}, req:{blood:true, manual:true, study:true, remote:false},
-            advice: "Развивайте мелкую моторику (лепка, моделирование). Ищите вузы с сильной практической базой. Это профессия, где 'руки кормят' буквально."
-        },
-        {
-            n:"Психотерапевт", r:{R:0,I:70,A:40,S:100,E:20,C:10}, req:{stress:8, remote:true, study:true},
-            advice: "Читайте фундаментальную литературу (Фрейд, Юнг, Ялом), а не поп-психологию. Вам нужно высшее образование. Учитесь слушать людей, не перебивая."
-        },
-        {
-            n:"Генетик", r:{R:30,I:100,A:20,S:20,E:10,C:50}, req:{math:6, study:true, remote:false},
-            advice: "Биология + Информатика = Ваше будущее. Изучайте биоинформатику. Следите за новостями про CRISPR и редактирование генома."
-        },
-        {
-            n:"Биотехнолог", r:{R:40,I:90,A:10,S:30,E:20,C:60}, req:{math:5, study:true, remote:false},
-            advice: "Вам нужна химия на высоком уровне. Ищите стажировки в фармкомпаниях или агрохолдингах. Это наука, которая становится продуктом."
-        },
-        {
-            n:"Предприниматель", r:{R:30,I:60,A:40,S:50,E:100,C:20}, req:{stress:9, remote:true, math:4},
-            advice: "Не учитесь 'бизнесу', учитесь продавать. Попробуйте купить что-то дешевле и продать дороже. Запустите микро-проект, чтобы понять, как работают деньги."
-        },
-        {
-            n:"Product Manager", r:{R:20,I:60,A:30,S:60,E:90,C:50}, req:{stress:8, remote:true, math:5},
-            advice: "Научитесь задавать вопрос 'Зачем?'. Изучите CustDev (интервью с пользователями). Попробуйте описать бизнес-модель любого приложения в вашем телефоне."
-        },
-        {
-            n:"Маркетолог", r:{R:10,I:60,A:60,S:50,E:90,C:40}, req:{art:4, remote:true, stress:6},
-            advice: "Выберите одну нишу: таргет, контекст или SMM. Попробуйте настроить рекламу для друга или своего блога. Анализируйте, почему вы сами кликаете на рекламу."
-        },
-        {
-            n:"HR-Директор", r:{R:10,I:40,A:20,S:100,E:80,C:40}, req:{stress:7, remote:true, math:2},
-            advice: "Изучите Трудовой кодекс и психологию личности. Попробуйте провести тестовое собеседование с другом. Ваша задача — видеть потенциал в людях."
-        },
-        {
-            n:"Менеджер по продажам", r:{R:20,I:20,A:10,S:80,E:100,C:30}, req:{stress:9, remote:true, math:3},
-            advice: "Прочитайте книги по переговорам (например, 'Сначала скажите НЕТ'). Устройтесь на подработку в колл-центр — это лучшая школа жизни и стрессоустойчивости."
-        },
-        {
-            n:"UX/UI Дизайнер", r:{R:10,I:50,A:100,S:40,E:20,C:30}, req:{art:8, remote:true, stress:4},
-            advice: "Скачайте Figma. Не рисуйте с нуля, а копируйте интерфейсы популярных приложений, чтобы понять их логику. Изучите гайдлайны iOS и Android."
-        },
-        {
-            n:"Архитектор", r:{R:50,I:70,A:90,S:20,E:30,C:50}, req:{art:7, math:6, study:true, remote:false},
-            advice: "Рисуйте, чертите, изучайте историю искусств и сопромат. Освойте программы Revit или AutoCAD. Гуляйте по городу, анализируя здания, а не просто глядя на них."
-        },
-        {
-            n:"Графический дизайнер", r:{R:10,I:30,A:100,S:20,E:30,C:20}, req:{art:9, remote:true},
-            advice: "Соберите портфолио на Behance, даже если это выдуманные проекты. Изучите основы композиции, типографики и цвета. Освойте Adobe Illustrator."
-        },
-        {
-            n:"Режиссер", r:{R:20,I:40,A:100,S:60,E:70,C:10}, req:{art:8, stress:9, remote:false},
-            advice: "Снимите короткометражку на телефон. Главное — история, а не камера. Изучайте драматургию и монтаж. Смотрите фильмы покадрово, анализируя свет."
-        },
-        {
-            n:"3D-Художник", r:{R:40,I:40,A:100,S:10,E:10,C:40}, req:{art:7, remote:true, math:4},
-            advice: "Скачайте Blender (он бесплатный). Начните с туториала 'пончик'. Разберитесь с полигонами, текстурами и светом. Соберите свою первую сцену."
-        },
-        {
-            n:"Финансовый аналитик", r:{R:10,I:80,A:0,S:20,E:50,C:100}, req:{math:8, stress:6, remote:true},
-            advice: "Excel — ваш лучший друг (освойте сводные таблицы и макросы). Изучите основы бухучета и финансового моделирования. Читайте финансовые новости."
-        },
-        {
-            n:"Аудитор", r:{R:20,I:70,A:0,S:30,E:40,C:100}, req:{math:7, remote:false, stress:5},
-            advice: "Внимание к деталям — ваше всё. Изучайте стандарты отчетности (МСФО). Будьте готовы к командировкам и работе с большим объемом документов."
-        },
-        {
-            n:"Бухгалтер", r:{R:10,I:40,A:0,S:20,E:30,C:100}, req:{math:6, remote:true, stress:3},
-            advice: "Пройдите курсы 1С. Изучите налоговый кодекс. Это профессия про порядок и ответственность. Начните с помощи в ведении ИП знакомым."
-        },
-        {
-            n:"Инженер-конструктор", r:{R:100,I:70,A:10,S:10,E:20,C:60}, req:{math:7, manual:true, study:true, remote:false},
-            advice: "Разберитесь, как работают механизмы. Изучайте физику и черчение. Освойте CAD-системы (Компас-3D, SolidWorks)."
-        },
-        {
-            n:"Пилот", r:{R:100,I:50,A:10,S:20,E:30,C:80}, req:{math:5, stress:9, manual:true, study:true, remote:false},
-            advice: "Здоровье и английский язык — это база. Попробуйте полетать на симуляторе. Путь в небо начинается с летного училища и жесткой медкомиссии."
-        },
-        {
-            n:"Шеф-повар", r:{R:90,I:30,A:80,S:40,E:60,C:50}, req:{manual:true, stress:9, art:5, remote:false},
-            advice: "Идите работать на кухню (даже чистить картошку), чтобы понять ритм. Учитесь чувствовать вкусы и химию продуктов. Готовьте много и для всех."
-        },
-        {
-            n:"Агроном", r:{R:90,I:70,A:10,S:20,E:40,C:50}, req:{manual:true, remote:false, study:true},
-            advice: "Современный агроном — это не лопата, а планшет и дроны. Изучайте биологию растений и современные агротехнологии. Практика — только в поле."
-        },
-        {
-            n:"Логист", r:{R:40,I:50,A:0,S:30,E:60,C:90}, req:{math:5, stress:7},
-            advice: "Развивайте системное мышление. Изучите географию перевозок и основы ВЭД (внешнеэкономической деятельности). Английский или Китайский будут огромным плюсом."
-        },
-        {
-            n:"Адвокат", r:{R:10,I:80,A:20,S:50,E:90,C:60}, req:{stress:8, study:true, remote:false},
-            advice: "Учитесь говорить убедительно и писать грамотно. Изучайте законы, но главное — судебную практику. Ходите в суды как слушатель, смотрите, как работают профи."
-        },
-        {
-            n:"Журналист", r:{R:20,I:70,A:80,S:70,E:50,C:20}, req:{art:6, stress:7, remote:true},
-            advice: "Заведите блог и пишите каждый день. Учитесь искать информацию и проверять факты. Будьте любопытны и не бойтесь задавать неудобные вопросы."
-        },
-        {
-            n:"Учитель", r:{R:10,I:50,A:40,S:100,E:40,C:30}, req:{stress:8, remote:false, study:true},
-            advice: "Попробуйте репетиторство. Если вам нравится объяснять сложное простыми словами и вы терпеливы — это ваше. Изучайте возрастную психологию."
-        },
-        {
-            n:"Переводчик", r:{R:10,I:60,A:70,S:50,E:30,C:40}, req:{lang:9, remote:true},
-            advice: "Погрузитесь в языковую среду (фильмы, книги, общение). Учите не только слова, но и культуру. Попробуйте переводить статьи или субтитры для практики."
-        },
-        {
-            n:"Эколог", r:{R:60,I:90,A:10,S:50,E:30,C:40}, req:{study:true, remote:false},
-            advice: "Начните с волонтерства в экологических организациях. Изучайте химию и правовые нормы охраны природы. Это работа для тех, кому не всё равно."
-        },
-        {
-            n:"Геолог", r:{R:90,I:90,A:0,S:10,E:10,C:30}, req:{manual:true, remote:false, study:true},
-            advice: "Готовьтесь к походной жизни. Изучайте физику земли и минералогию. Если романтика экспедиций и палаток вам близка — дерзайте."
-        },
-        {
-            n:"Фармацевт", r:{R:50,I:80,A:0,S:60,E:20,C:80}, req:{math:5, study:true, remote:false},
-            advice: "Химия — ваш главный предмет. Вам нужна точность и хорошая память. Это стабильная профессия на стыке медицины и науки."
-        },
-        {
-            n:"Ветеринар", r:{R:80,I:70,A:10,S:60,E:30,C:40}, req:{blood:true, manual:true, study:true, remote:false},
-            advice: "Животные не могут сказать, где болит. Вам нужно огромное терпение и любовь к ним. Волонтерство в приюте покажет, готовы ли вы к этому."
-        },
-        {
-            n:"Event-менеджер", r:{R:30,I:20,A:60,S:80,E:90,C:50}, req:{stress:10, remote:false, art:4},
-            advice: "Организуйте день рождения друга или мероприятие в университете. Учитесь работать в режиме многозадачности и решать форс-мажоры с улыбкой."
-        },
-        {
-            n:"Банкир", r:{R:10,I:60,A:0,S:40,E:80,C:80}, req:{math:7, stress:8, remote:false},
-            advice: "Начните с позиции стажера в отделении банка. Изучайте финансовые продукты и экономику. Важны коммуникабельность и внимательность."
-        },
-        {
-            n:"Следователь", r:{R:60,I:80,A:10,S:40,E:50,C:70}, req:{stress:9, blood:true, remote:false},
-            advice: "Развивайте логику и наблюдательность. Юридическое образование обязательно. Будьте готовы к ненормированному графику и жесткой дисциплине."
-        },
-        {
-            n:"Дипломат", r:{R:10,I:70,A:30,S:90,E:80,C:50}, req:{lang:8, stress:8, study:true, remote:false},
-            advice: "Учите языки и историю. Развивайте ораторское мастерство и эмоциональный интеллект. Умение договариваться и этикет — ваше оружие."
-        },
-        {
-            n:"Фитнес-тренер", r:{R:80,I:30,A:20,S:90,E:50,C:30}, req:{phys:9, remote:false},
-            advice: "Изучите анатомию и физиологию, чтобы не навредить клиентам. Ваш внешний вид — ваша визитка. Получите сертификат тренера."
-        },
-        {
-            n:"Копирайтер", r:{R:0,I:50,A:90,S:30,E:40,C:20}, req:{art:7, remote:true},
-            advice: "Пишите много. Читайте книги типа 'Пиши, сокращай'. Научитесь писать продающие тексты, а не школьные сочинения. Ищите первые заказы на биржах."
-        },
-        {
-            n:"Видеооператор", r:{R:70,I:20,A:80,S:30,E:20,C:40}, req:{art:6, manual:true, remote:false},
-            advice: "Снимайте всё вокруг. Изучите настройки камеры (ISO, выдержка, диафрагма). Освойте монтаж в Premiere Pro или DaVinci Resolve."
-        },
-        {
-            n:"Звукорежиссер", r:{R:60,I:40,A:80,S:20,E:10,C:50}, req:{art:5, remote:false},
-            advice: "Слушайте музыку аналитически (раскладывая на инструменты). Освойте программы для работы со звуком (Cubase, Logic). Практикуйтесь на концертах или в студиях."
-        },
-        {
-            n:"Библиотекарь", r:{R:20,I:50,A:40,S:40,E:10,C:90}, req:{stress:1, remote:false},
-            advice: "Если вы любите тишину, порядок и систематизацию — это для вас. Современный библиотекарь также работает с цифровыми архивами и проводит мероприятия."
-        },
-        {
-            n:"Полицейский", r:{R:80,I:40,A:0,S:70,E:60,C:80}, req:{phys:7, stress:9, remote:false},
-            advice: "Нужна отличная физподготовка и чистое прошлое. Готовьтесь к службе в армии или поступайте в профильный вуз МВД. Это служба, а не просто работа."
-        },
-        {
-            n:"Военный", r:{R:90,I:30,A:0,S:40,E:60,C:90}, req:{phys:8, stress:10, remote:false},
-            advice: "Дисциплина и подчинение приказу. Хорошая физическая форма обязательна. Военное училище — старт карьеры офицера."
-        },
-        {
-            n:"Актёр", r:{R:10,I:20,A:100,S:70,E:40,C:10}, req:{art:9, speak:10, remote:false},
-            advice: "Запишитесь в театральную студию. Развивайте речь, пластику и память. Ходите на кастинги. Будьте готовы к отказам — это часть профессии."
-        },
-        {
-            n:"Социолог", r:{R:10,I:90,A:20,S:60,E:30,C:50}, req:{math:5, study:true},
-            advice: "Интерес к людям и данным. Учитесь составлять анкеты и анализировать статистику (SPSS). Читайте социологические исследования."
-        },
-        {
-            n:"Нутрициолог", r:{R:40,I:70,A:20,S:80,E:40,C:50}, req:{study:false, remote:true},
-            advice: "Разберитесь в биохимии питания. Пройдите курсы доказательной нутрициологии. Начните вести блог о здоровом питании и консультировать."
-        }
+        { n:"Backend-разработчик", r:{R:20,I:100,A:10,S:0,E:10,C:60}, req:{math:7, remote:true, stress:5, study:true}, advice: "Начните с изучения Python или Go. Напишите свой первый API и разберитесь с базами данных (SQL)." },
+        { n:"Fullstack-разработчик", r:{R:30,I:90,A:30,S:10,E:20,C:50}, req:{math:6, remote:true, stress:6, study:true}, advice: "Вам нужно знать и 'лицо', и 'изнанку' сайта. Изучите HTML/CSS + JavaScript (React), а затем Node.js." },
+        { n:"Data Scientist", r:{R:10,I:100,A:10,S:0,E:20,C:80}, req:{math:9, remote:true, stress:4, study:true}, advice: "Освежите математическую статистику. Изучите Python (библиотеки Pandas, NumPy)." },
+        { n:"Кибербезопасность", r:{R:50,I:90,A:10,S:10,E:30,C:80}, req:{math:7, remote:true, stress:7, study:true}, advice: "Изучите, как работают сети (TCP/IP) и ОС Linux. Попробуйте пройти CTF-соревнования." },
+        { n:"DevOps Инженер", r:{R:60,I:80,A:0,S:10,E:20,C:90}, req:{math:6, remote:true, stress:6, study:false}, advice: "Разберитесь с Docker и контейнерами. Изучите Linux на уровне администратора." },
+        
+        { n:"Хирург", r:{R:90,I:80,A:10,S:60,E:20,C:40}, req:{blood:true, stress:10, manual:true, study:true, remote:false}, advice: "Это марафон на 8+ лет. Начните с углубленной биологии и химии." },
+        { n:"Стоматолог", r:{R:80,I:70,A:20,S:50,E:30,C:60}, req:{blood:true, manual:true, study:true, remote:false}, advice: "Развивайте мелкую моторику (лепка, моделирование). Ищите вузы с сильной практической базой." },
+        { n:"Психотерапевт", r:{R:0,I:70,A:40,S:100,E:20,C:10}, req:{stress:8, remote:true, study:true}, advice: "Читайте фундаментальную литературу (Фрейд, Юнг, Ялом). Учитесь слушать людей." },
+        { n:"Генетик", r:{R:30,I:100,A:20,S:20,E:10,C:50}, req:{math:6, study:true, remote:false}, advice: "Биология + Информатика = Ваше будущее. Изучайте биоинформатику." },
+        { n:"Биотехнолог", r:{R:40,I:90,A:10,S:30,E:20,C:60}, req:{math:5, study:true, remote:false}, advice: "Вам нужна химия на высоком уровне. Ищите стажировки в фармкомпаниях." },
+
+        { n:"Предприниматель", r:{R:30,I:60,A:40,S:50,E:100,C:20}, req:{stress:9, remote:true, math:4}, advice: "Не учитесь 'бизнесу', учитесь продавать. Запустите микро-проект." },
+        { n:"Product Manager", r:{R:20,I:60,A:30,S:60,E:90,C:50}, req:{stress:8, remote:true, math:5}, advice: "Научитесь задавать вопрос 'Зачем?'. Изучите CustDev (интервью с пользователями)." },
+        { n:"Маркетолог", r:{R:10,I:60,A:60,S:50,E:90,C:40}, req:{art:4, remote:true, stress:6}, advice: "Выберите одну нишу: таргет, контекст или SMM. Попробуйте настроить рекламу." },
+        { n:"HR-Директор", r:{R:10,I:40,A:20,S:100,E:80,C:40}, req:{stress:7, remote:true, math:2}, advice: "Изучите Трудовой кодекс и психологию личности. Попробуйте провести тестовое собеседование." },
+        { n:"Менеджер по продажам", r:{R:20,I:20,A:10,S:80,E:100,C:30}, req:{stress:9, remote:true, math:3}, advice: "Прочитайте книги по переговорам. Устройтесь на подработку в колл-центр." },
+
+        { n:"UX/UI Дизайнер", r:{R:10,I:50,A:100,S:40,E:20,C:30}, req:{art:8, remote:true, stress:4}, advice: "Скачайте Figma. Не рисуйте с нуля, а копируйте интерфейсы популярных приложений." },
+        { n:"Архитектор", r:{R:50,I:70,A:90,S:20,E:30,C:50}, req:{art:7, math:6, study:true, remote:false}, advice: "Рисуйте, чертите, изучайте историю искусств и сопромат. Освойте Revit." },
+        { n:"Графический дизайнер", r:{R:10,I:30,A:100,S:20,E:30,C:20}, req:{art:9, remote:true}, advice: "Соберите портфолио на Behance. Изучите основы композиции и цвета." },
+        { n:"Режиссер", r:{R:20,I:40,A:100,S:60,E:70,C:10}, req:{art:8, stress:9, remote:false}, advice: "Снимите короткометражку на телефон. Главное — история, а не камера." },
+        { n:"3D-Художник", r:{R:40,I:40,A:100,S:10,E:10,C:40}, req:{art:7, remote:true, math:4}, advice: "Скачайте Blender (он бесплатный). Начните с туториала 'пончик'." },
+
+        { n:"Финансовый аналитик", r:{R:10,I:80,A:0,S:20,E:50,C:100}, req:{math:8, stress:6, remote:true}, advice: "Excel — ваш лучший друг. Изучите основы бухучета и финансового моделирования." },
+        { n:"Аудитор", r:{R:20,I:70,A:0,S:30,E:40,C:100}, req:{math:7, remote:false, stress:5}, advice: "Внимание к деталям — ваше всё. Изучайте стандарты отчетности (МСФО)." },
+        { n:"Бухгалтер", r:{R:10,I:40,A:0,S:20,E:30,C:100}, req:{math:6, remote:true, stress:3}, advice: "Пройдите курсы 1С. Изучите налоговый кодекс." },
+        { n:"Инженер-конструктор", r:{R:100,I:70,A:10,S:10,E:20,C:60}, req:{math:7, manual:true, study:true, remote:false}, advice: "Разберитесь, как работают механизмы. Изучайте физику и черчение." },
+        { n:"Пилот", r:{R:100,I:50,A:10,S:20,E:30,C:80}, req:{math:5, stress:9, manual:true, study:true, remote:false}, advice: "Здоровье и английский язык — это база. Попробуйте полетать на симуляторе." },
+        
+        { n:"Шеф-повар", r:{R:90,I:30,A:80,S:40,E:60,C:50}, req:{manual:true, stress:9, art:5, remote:false}, advice: "Идите работать на кухню (даже чистить картошку), чтобы понять ритм." },
+        { n:"Агроном", r:{R:90,I:70,A:10,S:20,E:40,C:50}, req:{manual:true, remote:false, study:true}, advice: "Изучайте биологию растений и современные агротехнологии." },
+        { n:"Логист", r:{R:40,I:50,A:0,S:30,E:60,C:90}, req:{math:5, stress:7}, advice: "Развивайте системное мышление. Изучите географию перевозок." },
+        { n:"Адвокат", r:{R:10,I:80,A:20,S:50,E:90,C:60}, req:{stress:8, study:true, remote:false}, advice: "Учитесь говорить убедительно и писать грамотно. Изучайте законы." },
+        { n:"Журналист", r:{R:20,I:70,A:80,S:70,E:50,C:20}, req:{art:6, stress:7, remote:true}, advice: "Заведите блог и пишите каждый день. Учитесь искать информацию." },
+        
+        { n:"Учитель", r:{R:10,I:50,A:40,S:100,E:40,C:30}, req:{stress:8, remote:false, study:true}, advice: "Попробуйте репетиторство. Изучайте возрастную психологию." },
+        { n:"Переводчик", r:{R:10,I:60,A:70,S:50,E:30,C:40}, req:{lang:9, remote:true}, advice: "Погрузитесь в языковую среду. Учите не только слова, но и культуру." },
+        { n:"Эколог", r:{R:60,I:90,A:10,S:50,E:30,C:40}, req:{study:true, remote:false}, advice: "Начните с волонтерства в экологических организациях." },
+        { n:"Геолог", r:{R:90,I:90,A:0,S:10,E:10,C:30}, req:{manual:true, remote:false, study:true}, advice: "Готовьтесь к походной жизни. Изучайте физику земли." },
+        { n:"Фармацевт", r:{R:50,I:80,A:0,S:60,E:20,C:80}, req:{math:5, study:true, remote:false}, advice: "Химия — ваш главный предмет. Вам нужна точность и хорошая память." },
+        
+        { n:"Ветеринар", r:{R:80,I:70,A:10,S:60,E:30,C:40}, req:{blood:true, manual:true, study:true, remote:false}, advice: "Животные не могут сказать, где болит. Вам нужно огромное терпение." },
+        { n:"Event-менеджер", r:{R:30,I:20,A:60,S:80,E:90,C:50}, req:{stress:10, remote:false, art:4}, advice: "Организуйте день рождения друга или мероприятие в университете." },
+        { n:"Банкир", r:{R:10,I:60,A:0,S:40,E:80,C:80}, req:{math:7, stress:8, remote:false}, advice: "Начните с позиции стажера в отделении банка." },
+        { n:"Следователь", r:{R:60,I:80,A:10,S:40,E:50,C:70}, req:{stress:9, blood:true, remote:false}, advice: "Развивайте логику и наблюдательность. Юридическое образование обязательно." },
+        { n:"Дипломат", r:{R:10,I:70,A:30,S:90,E:80,C:50}, req:{lang:8, stress:8, study:true, remote:false}, advice: "Учите языки и историю. Развивайте ораторское мастерство." },
+        
+        { n:"Фитнес-тренер", r:{R:80,I:30,A:20,S:90,E:50,C:30}, req:{phys:9, remote:false}, advice: "Изучите анатомию и физиологию. Ваш внешний вид — ваша визитка." },
+        { n:"Копирайтер", r:{R:0,I:50,A:90,S:30,E:40,C:20}, req:{art:7, remote:true}, advice: "Пишите много. Читайте книги типа 'Пиши, сокращай'." },
+        { n:"Видеооператор", r:{R:70,I:20,A:80,S:30,E:20,C:40}, req:{art:6, manual:true, remote:false}, advice: "Снимайте всё вокруг. Изучите настройки камеры (ISO, выдержка)." },
+        { n:"Звукорежиссер", r:{R:60,I:40,A:80,S:20,E:10,C:50}, req:{art:5, remote:false}, advice: "Слушайте музыку аналитически. Освойте Cubase или Logic." },
+        { n:"Библиотекарь", r:{R:20,I:50,A:40,S:40,E:10,C:90}, req:{stress:1, remote:false}, advice: "Если вы любите тишину и порядок — это для вас." },
+        
+        { n:"Полицейский", r:{R:80,I:40,A:0,S:70,E:60,C:80}, req:{phys:7, stress:9, remote:false}, advice: "Нужна отличная физподготовка. Готовьтесь к службе в армии." },
+        { n:"Военный", r:{R:90,I:30,A:0,S:40,E:60,C:90}, req:{phys:8, stress:10, remote:false}, advice: "Дисциплина и подчинение приказу. Хорошая физическая форма обязательна." },
+        { n:"Актёр", r:{R:10,I:20,A:100,S:70,E:40,C:10}, req:{art:9, speak:10, remote:false}, advice: "Запишитесь в театральную студию. Развивайте речь и пластику." },
+        { n:"Социолог", r:{R:10,I:90,A:20,S:60,E:30,C:50}, req:{math:5, study:true}, advice: "Интерес к людям и данным. Учитесь анализировать статистику." },
+        { n:"Нутрициолог", r:{R:40,I:70,A:20,S:80,E:40,C:50}, req:{study:false, remote:true}, advice: "Разберитесь в биохимии питания. Пройдите курсы доказательной нутрициологии." }
     ];
 
-    // --- ОПИСАНИЯ MBTI ---
+    // --- 3. MBTI БАЗА ---
+    // (ВАЖНО: ВСТАВЬ СЮДА ПОЛНЫЕ ОПИСАНИЯ, ТУТ ОНИ СОКРАЩЕНЫ)
     const mbtiInfo = {
         // === ТИП №1: INTJ (СТРАТЕГ) - ПОЛНОЕ ДОСЬЕ ===
         "INTJ": {
@@ -761,29 +756,589 @@
                 <p>Вы не мастер флирта и намеков. Если вы нравитесь кому-то, вам лучше сказать об этом прямо (и, возможно, предоставить доказательства). В отношениях вы преданны, честны и даете партнеру много свободы, ожидая того же взамен.</p>
             `
         },
-        "ENTJ": { name: "Командир", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ENTP": { name: "Полемист", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "INFJ": { name: "Активист", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "INFP": { name: "Посредник", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ENFJ": { name: "Тренер", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ENFP": { name: "Борец", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ISTJ": { name: "Администратор", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ISFJ": { name: "Защитник", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ESTJ": { name: "Менеджер", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ESFJ": { name: "Консул", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ISTP": { name: "Виртуоз", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ISFP": { name: "Артист", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ESTP": { name: "Делец", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." },
-        "ESFP": { name: "Развлекатель", desc: "Заглушка...", strengths: "...", weaknesses: "...", stress: "...", relations: "...", love: "..." }
+        "ENTJ": {
+            name: "Командир",
+            desc: `
+                <p>Вы — прирожденный лидер, маршал, ведущий войско к победе. Для вас нет нерешаемых проблем, есть только задачи, требующие плана действий. Ваша суперсила — видеть неэффективность и безжалостно ее устранять. Вы живете будущим, постоянно сканируя горизонт в поисках новых вершин, которые можно покорить.</p>
+                <p>Вы обладаете мощной харизмой и уверенностью, которая заставляет других следовать за вами. Вы не боитесь брать на себя ответственность и принимать жесткие решения, от которых другие уклоняются. В вашем мире «хороший человек» — это не профессия; вы уважаете только компетентность и результат.</p>
+                <p>Вы можете казаться холодным или властным, но это не со зла. Просто вы считаете, что лучшая забота о людях — это привести их к успеху, даже если по пути придется кого-то подгонять пинками.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Эффективность.</b> Вы способны организовать хаос за считанные минуты. Вы инстинктивно знаете, как использовать ресурсы (людей, время, деньги) наилучшим образом.</li>
+                    <li><b>Энергичность.</b> Вы не устаете от работы, она вас заряжает. Вы способны тащить на себе проекты, под которыми другие ломаются.</li>
+                    <li><b>Стратегичность.</b> Вы видите ситуацию целиком, как на карте боевых действий.</li>
+                    <li><b>Харизма.</b> Вы умеете убеждать и вдохновлять. Люди верят вам, потому что вы сами верите в то, что говорите.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Нетерпимость.</b> Глупость, лень и медлительность вызывают у вас физическое раздражение. Вы можете быть резки с теми, кто не успевает за вашим темпом.</li>
+                    <li><b>Высокомерие.</b> Вы часто считаете свое мнение единственно верным, подавляя инициативу других.</li>
+                    <li><b>Плохая работа с эмоциями.</b> Чужие чувства кажутся вам иррациональным шумом, который мешает делу. Вы можете ненароком обидеть близких своей прямотой.</li>
+                    <li><b>Трудоголизм.</b> Вы не умеете расслабляться. Отдых для вас — это просто смена деятельности.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас выбивает из колеи:</p>
+                <ul>
+                    <li><b>Потеря контроля.</b> Ситуации, где вы бессильны что-либо изменить.</li>
+                    <li><b>Некомпетентность окружающих.</b> Когда приходится исправлять чужие ошибки.</li>
+                    <li><b>Бездействие.</b> Вынужденное ожидание или топтание на месте.</li>
+                    <li><b>Эмоциональные истерики.</b> Вы просто не понимаете, что делать с плачущими людьми, и это вгоняет вас в ступор.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы ищете равных. Вам не нужны поклонники, вам нужны соратники, которые не побоятся бросить вам интеллектуальный вызов. Вы уважаете тех, кто может аргументированно отстоять свою точку зрения в споре с вами.</p>
+                <p>В дружбе вы надежны, как скала, но не ждите от вас эмоциональных поглаживаний. Если у друга проблема, вы не будете плакать вместе с ним, вы составите план решения проблемы из 10 пунктов.</p>
+            `,
+            love: `
+                <p>К отношениям вы подходите так же серьезно, как к слиянию корпораций. Вы ищете партнера, с которым можно построить Империю (или хотя бы крепкую семью с четкими целями). Вам важен личностный рост обоих партнеров.</p>
+                <p>Вы любите доминировать и решать всё за двоих («Мы едем в отпуск туда-то, билеты я купил»). Ваша главная зона роста — научиться иногда отпускать руль и позволять партнеру быть слабым, не пытаясь его «починить».</p>
+            `
+        },
+        // === ТИП №5: ENTP (ПОЛЕМИСТ) ===
+        "ENTP": {
+            name: "Полемист",
+            desc: `
+                <p>Вы — интеллектуальный провокатор. Вам не так важен результат спора, как красота самой битвы умов. Вы живете, чтобы подвергать сомнению догмы, ломать стереотипы и смотреть, что из этого получится. Для вас нет священных коров — вы готовы аргументированно доказать, что Земля плоская, просто чтобы проверить оппонента на прочность.</p>
+                <p>Ваш мозг — это генератор идей, работающий на ядерном топливе. Вы начинаете десять проектов, бросаете девять, а десятый меняет мир (или просто весело взрывается). Рутина, инструкции и фраза «так принято» вызывают у вас аллергию.</p>
+                <p>Вы обожаете сложные концепции и абстрактные теории. Вы быстро соображаете, у вас подвешен язык, и вы можете выкрутиться из любой ситуации. Вы — тот человек, который придумывает стартап за барной стойкой в 3 часа ночи.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Быстрота ума.</b> Вы схватываете новые идеи на лету. Пока другие читают инструкцию, вы уже разобрали и собрали прибор заново (и у вас остались лишние детали).</li>
+                    <li><b>Оригинальность.</b> Вы видите связи там, где другие видят пустоту. Ваш подход всегда нестандартен.</li>
+                    <li><b>Энергичность.</b> Если идея вас захватила, вы можете работать сутками, забыв о сне и еде.</li>
+                    <li><b>Харизма.</b> Люди тянутся к вам, потому что с вами никогда не бывает скучно. Вы умеете зажечь толпу.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Склонность к спорам.</b> Вы можете спорить ради спора, доводя близких до белого каления. Для вас это игра, для них — конфликт.</li>
+                    <li><b>Проблемы с фокусом.</b> Начинать вы любите, заканчивать — ненавидите. Детали и шлифовка наводят на вас тоску.</li>
+                    <li><b>Нечувствительность.</b> В погоне за истиной или хорошей шуткой вы часто не замечаете, что обидели человека.</li>
+                    <li><b>Ненависть к рутине.</b> Заполнить налоговую декларацию для вас сложнее, чем доказать теорему Ферма.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Ваш криптонит:</p>
+                <ul>
+                    <li><b>Скука и рутина.</b> Однообразная работа убивает вашу душу.</li>
+                    <li><b>Микроменеджмент.</b> Контроль каждой мелочи заставляет вас бунтовать.</li>
+                    <li><b>Изоляция.</b> Вам нужна аудитория и оппоненты. Без общения вы чахнете.</li>
+                    <li><b>Дедлайны и правила.</b> Любые ограничения вы воспринимаете как вызов, который надо нарушить.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы — душа компании, но с вами бывает непросто. Вы тестируете людей на прочность: подкалываете, провоцируете, задаете неудобные вопросы. Те, кто проходит этот «тест» и не обижается, становятся вашими лучшими друзьями.</p>
+                <p>Вы цените людей, которые могут поддержать ваш безумный полет мысли. Скучные, обидчивые или слишком традиционные люди долго рядом с вами не задерживаются.</p>
+            `,
+            love: `
+                <p>В отношениях вам нужен драйв и рост. Партнер должен быть вам ровней — тем, кто не побоится ответить на вашу колкость и предложит безумную авантюру. Вам быстро становится скучно, если отношения превращаются в «диван-телевизор».</p>
+                <p>Вы не самый романтичный тип в классическом понимании. Вы вряд ли будете писать стихи, но зато устроите незабываемое свидание на крыше или в другой стране. Ваша проблема — вы иногда забываете, что партнеру нужна просто забота, а не только интеллектуальные дебаты.</p>
+            `
+        },
+        "INFJ": {
+            name: "Активист",
+            desc: `
+                <p>Вы — самый редкий тип личности. Вы сочетаете в себе мечтательность и решительность. Вы не просто хотите, чтобы мир стал лучше, вы берете и делаете это. Вы обладаете врожденным чувством морали и справедливости, но вы не шумный бунтарь, а тихий, но невероятно упрямый лидер.</p>
+                <p>Вы видите людей насквозь. Ваша интуиция работает как рентген: вы чувствуете, когда вам врут, и понимаете скрытые мотивы окружающих лучше, чем они сами. Люди часто приходят к вам за советом и исповедью, потому что чувствуют ваше тепло и мудрость.</p>
+                <p>Вы живете целью. Просто «работать за деньги» для вас — медленная смерть. Вам нужно чувствовать, что ваша деятельность имеет высший смысл и помогает человечеству (или хотя бы конкретным людям).</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Проницательность.</b> Вы видите корень проблемы, а не симптомы. Вы отличный стратег в вопросах человеческих отношений.</li>
+                    <li><b>Принципиальность.</b> Ваши убеждения непоколебимы. Если вы считаете что-то правильным, вас невозможно сбить с пути.</li>
+                    <li><b>Страсть.</b> Вы тихи снаружи, но внутри вас горит огонь. Вы вкладываете душу во все, что делаете.</li>
+                    <li><b>Альтруизм.</b> Вы искренне хотите помогать другим, не требуя награды.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Перфекционизм.</b> Вы никогда не довольны результатом на 100%. Вы можете выгореть, пытаясь достичь недостижимого идеала.</li>
+                    <li><b>Чувствительность к критике.</b> Вы воспринимаете нападки на ваши идеи как личное оскорбление. Конфликты причиняют вам физическую боль.</li>
+                    <li><b>Скрытность.</b> Вы открываетесь очень медленно. Даже близкие друзья могут не знать, что творится у вас в душе на самом деле.</li>
+                    <li><b>Выгорание.</b> Вы так заботитесь о других, что забываете о себе, пока просто не упадете от истощения.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Что вас разрушает:</p>
+                <ul>
+                    <li><b>Агрессия и конфликты.</b> Громкие крики и ругань выбивают вас из колеи на несколько дней.</li>
+                    <li><b>Бессмысленность.</b> Работа ради галочки или продажа воздуха.</li>
+                    <li><b>Переизбыток деталей.</b> Бухгалтерия и мелкая бюрократия сводят вас с ума.</li>
+                    <li><b>Неискренность.</b> Вы физически не переносите лицемеров и манипуляторов.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы — тот самый друг, которому звонят в 3 часа ночи в слезах. Вы умеете слушать и давать глубокие советы. Но у этой медали есть обратная сторона: вы часто становитесь «жилеткой» для всех подряд, забывая о своих границах.</p>
+                <p>Ваш круг общения узок, но связи в нем невероятно прочны. Вы не тратите время на поверхностные знакомства. Если вы назвали кого-то другом, вы готовы пойти за ним в огонь и воду.</p>
+            `,
+            love: `
+                <p>Вы ищете Идеальную Любовь. Не интрижку, не «просто пожить вместе», а духовное единение. Ваши стандарты очень высоки (иногда нереалистично высоки). Вы хотите, чтобы партнер понимал вас без слов.</p>
+                <p>Когда вы влюбляетесь, вы отдаете всего себя. Вы невероятно заботливы и внимательны. Но если партнер предаст ваши идеалы или окажется поверхностным человеком, вы «захлопнете дверь» навсегда (тот самый знаменитый INFJ door slam).</p>
+            `
+        },
+        // === ТИП №3: INFP (ПОСРЕДНИК) ===
+        "INFP": {
+            name: "Посредник",
+            desc: `
+                <p>Вы — истинный идеалист, всегда ищущий луч света даже в самой темной ситуации. На первый взгляд вы можете показаться спокойным или даже застенчивым, но внутри вас горит яркое пламя страсти и убеждений. Вы живете не логикой, а ценностями: для вас важно не то, что «выгодно», а то, что «правильно» и находит отклик в душе.</p>
+                <p>Ваша суперсила — видеть в людях потенциал, которого они сами не замечают. Вы глубоко чувствуете этот мир, воспринимая его через призму метафор, символов и скрытых смыслов. Обыденность и серость будней вас угнетают — вы стремитесь наполнить каждое действие высшим смыслом.</p>
+                <p>Вы часто чувствуете себя непонятым, потому что ваш внутренний мир намного богаче и сложнее, чем то, что вы показываете наружу. Но когда вы находите «своих» людей или «свое» дело, вы способны свернуть горы.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Эмпатия.</b> Вы чувствуете эмоции других почти как свои собственные. Это делает вас гениальным психологом, другом или наставником.</li>
+                    <li><b>Креативность.</b> Ваше воображение безгранично. Вы способны придумывать миры, сюжеты и идеи, которые никому другому не пришли бы в голову.</li>
+                    <li><b>Страстность.</b> Если вы верите в идею, вы посвятите ей всего себя без остатка. Вы не работаете «от звонка до звонка», вы работаете ради миссии.</li>
+                    <li><b>Открытость.</b> Вы не осуждаете людей за их странности, потому что сами цените индивидуальность превыше всего.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Непрактичность.</b> Вы можете витать в облаках, забывая оплатить счета или пообедать. Бытовые мелочи кажутся вам скучными и неважными.</li>
+                    <li><b>Склонность принимать всё на свой счет.</b> Любая критика, даже конструктивная, ранит вас в самое сердце. Вы долго переживаете из-за сказанных слов.</li>
+                    <li><b>Изоляция.</b> Когда мир становится слишком жестоким, вы склонны «уходить в себя» и обрывать контакты, вместо того чтобы просить о помощи.</li>
+                    <li><b>Сложность с завершением дел.</b> Начинать новый проект вдохновляюще, а вот доводить детали до конца — мучительно.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Ваш внутренний свет гаснет, когда:</p>
+                <ul>
+                    <li><b>Нарушаются ваши ценности.</b> Если вас заставляют делать то, что вы считаете неэтичным или ложным.</li>
+                    <li><b>Много критики и конфликтов.</b> Агрессивная среда буквально высасывает из вас жизнь.</li>
+                    <li><b>Бюрократия.</b> Жесткие правила, таблицы и работа ради галочки вызывают у вас апатию.</li>
+                    <li><b>Обесценивание.</b> Когда ваши идеи называют «глупыми мечтами» или «детским садом».</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы не ищете популярности, вам нужна Глубина. Светские беседы о погоде вызывают у вас зевоту, но вы готовы часами обсуждать смысл жизни, искусство или будущее человечества.</p>
+                <p>Вы невероятно преданный друг. Вы всегда на стороне близких, готовы выслушать и поддержать в трудную минуту. Однако вам нужно много личного пространства, чтобы «перезарядиться». Если вы не отвечаете на сообщения — это не значит, что вы обиделись, вы просто восстанавливаете энергию.</p>
+            `,
+            love: `
+                <p>В любви вы — безнадежный романтик. Вы не просто ищете партнера, вы ищете Родственную Душу, с которой можно слиться ментально и духовно. Вы склонны идеализировать партнера, приписывая ему качества героев ваших любимых книг.</p>
+                <p>Вам важно, чтобы вас принимали таким, какой вы есть, со всеми странностями. Вы избегаете конфликтов до последнего, пытаясь сохранить гармонию, но если кто-то предаст ваше доверие, вы можете уйти навсегда, молча закрыв за собой дверь.</p>
+            `
+        },
+        "ENFJ": {
+            name: "Тренер",
+            desc: `
+                <p>Вы — прирожденный лидер и ментор. Ваша суперсила — видеть потенциал в людях и помогать им раскрыться. Вы не командуете, как генерал, вы вдохновляете, как лучший в мире тренер. Люди тянутся к вам, потому что рядом с вами они чувствуют себя лучше, умнее и сильнее.</p>
+                <p>Вы обладаете невероятной эмпатией, но в отличие от других чувствующих типов, вы экстраверт. Вы направляете свои эмоции наружу, чтобы объединять людей, разрешать конфликты и создавать команды мечты. Вы искренне верите, что мир можно спасти через любовь и взаимопонимание.</p>
+                <p>Ваша жизнь — это постоянное общение. Вы часто берете на себя роль организатора вечеринок, миротворца в семье или старосты в группе, просто потому что не можете смотреть, как другие ссорятся или скучают.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Харизма.</b> Когда вы говорите, люди слушают. Вы умеете зажечь искру в глазах собеседника.</li>
+                    <li><b>Надежность.</b> Если вы пообещали, вы разобьетесь в лепешку, но сделаете. Вы никогда не подводите свою «стаю».</li>
+                    <li><b>Лидерство.</b> Вы интуитивно понимаете, как расставить людей так, чтобы каждый был на своем месте.</li>
+                    <li><b>Альтруизм.</b> Вы получаете кайф, когда помогаете другим достичь успеха. Чужая победа для вас слаще своей.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Чрезмерный идеализм.</b> Вы часто верите в людей больше, чем они того заслуживают, и сильно разочаровываетесь, когда они вас предают.</li>
+                    <li><b>Забываете о себе.</b> Вы решаете чужие проблемы 24/7, пока не обнаружите, что ваша собственная жизнь в руинах.</li>
+                    <li><b>Зависимость от оценки.</b> Ваша самооценка прыгает в зависимости от того, похвалили вас сегодня или нет.</li>
+                    <li><b>Сложность с жесткими решениями.</b> Уволить человека или сделать выговор для вас — настоящая пытка.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Ваш кошмар:</p>
+                <ul>
+                    <li><b>Конфликты и раздоры.</b> Вы физически не переносите ссоры и пытаетесь помирить всех любой ценой.</li>
+                    <li><b>Одиночество.</b> Изоляция лишает вас энергии. Вам нужны люди как воздух.</li>
+                    <li><b>Критика.</b> Если кто-то говорит, что вы плохой лидер, это бьет по вам сильнее всего.</li>
+                    <li><b>Чужие неудачи.</b> Вы воспринимаете провал друга как свой личный недосмотр.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы — социальный клей. У вас сотни знакомых, и про каждого вы помните день рождения и имя любимой собаки. Вы мастерски строите нетворкинг, даже не пытаясь.</p>
+                <p>Но иногда вы бываете навязчивы со своей заботой («Надень шапку!», «Ты точно покушал?»). Вам нужно учиться давать людям право на собственные ошибки.</p>
+            `,
+            love: `
+                <p>В отношениях вы выкладываетесь на 200%. Вы тот партнер, который устраивает сюрпризы без повода и всегда готов выслушать. Вы хотите, чтобы ваш союз был идеальным примером для подражания.</p>
+                <p>Вам жизненно необходимо слышать слова любви и благодарности. Если партнер холоден или воспринимает вашу заботу как должное, вы быстро выгораете и чувствуете себя ненужным.</p>
+            `
+        },
+        "ENFP": {
+            name: "Борец",
+            desc: `
+                <p>Вы — настоящий фейерверк идей и эмоций. Вы не просто живете, вы исследуете этот мир с детским любопытством. Для вас нет ничего невозможного, есть только то, что еще не пробовали. Вы ненавидите скуку, рутину и серые будни больше всего на свете.</p>
+                <p>Вы видите жизнь как огромный пазл, где всё связано со всем. Ваша интуиция подсказывает вам скрытые смыслы, а ваша энергия позволяет заражать энтузиазмом всех вокруг. Вы можете начать утро с идеи написать книгу, в обед решить учить японский, а вечером уехать в спонтанное путешествие.</p>
+                <p>Вам важно чувствовать свободу. Любые рамки, графики и строгие инструкции душат вас. Вы работаете рывками: то лежите на диване, то выдаете гениальный результат за одну ночь.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Любопытство.</b> Вы выходите за рамки привычного. Вам интересно всё: от астрофизики до выращивания кактусов.</li>
+                    <li><b>Коммуникабельность.</b> Вы можете разговорить даже камень. Люди раскрываются перед вами, потому что чувствуют вашу искренность.</li>
+                    <li><b>Энергия.</b> Когда вы «в потоке», вас не остановить. Вы способны вдохновить команду на подвиг.</li>
+                    <li><b>Креативность.</b> Стандартные пути не для вас. Вы всегда найдете «третий вариант», который никому не приходил в голову.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Проблемы с фокусом.</b> Вам сложно доводить дела до конца. Как только пропадает новизна, пропадает и интерес.</li>
+                    <li><b>Оверсинкинг.</b> Вы склонны искать скрытый смысл там, где его нет, и накручивать себя из-за мелочей.</li>
+                    <li><b>Эмоциональность.</b> Ваши эмоции скачут как на американских горках. Стресс бьет по вам очень сильно.</li>
+                    <li><b>Неорганизованность.</b> Планирование, дедлайны и порядок на столе — ваши слабые места.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас убивает:</p>
+                <ul>
+                    <li><b>Микроменеджмент.</b> Когда кто-то стоит над душой и контролирует каждый шаг.</li>
+                    <li><b>Рутина.</b> Монотонная работа с документами или цифрами вызывает у вас депрессию.</li>
+                    <li><b>Конфликты.</b> Вы хотите, чтобы всем было хорошо, и ссоры выбивают вас из колеи.</li>
+                    <li><b>Одиночество.</b> Вам нужны люди, чтобы отражать свои идеи об них.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы — магнит для людей. У вас широкий круг общения, и вы искренне интересуетесь каждым. Вы тот друг, который всегда за любую движуху.</p>
+                <p>Однако иногда вы бываете поверхностны или пропадаете с радаров, увлекшись новым хобби. Близким может не хватать вашей стабильности и надежности, хотя они обожают вашу теплоту.</p>
+            `,
+            love: `
+                <p>Любовь для вас — это приключение. Вы ищете партнера, с которым можно расти и развиваться, а не просто вести быт. Вам важна эмоциональная связь и возможность дурачиться вместе.</p>
+                <p>Вы склонны идеализировать отношения на старте, но быстро остываете, если начинается «бытовуха». Вам нужен партнер, который будет давать вам свободу, но при этом мягко возвращать вас с небес на землю.</p>
+            `
+        },
+        "ISTJ": {
+            name: "Администратор",
+            desc: `
+                <p>Вы — человек-фундамент. Надежный, честный и невероятно ответственный. Вы не верите в удачу, вы верите в факты, правила и тяжелый труд. Если вы сказали, что сделаете это к вторнику — значит, это будет сделано к вторнику, и никаких оправданий.</p>
+                <p>Вы любите порядок во всем: в доме, в голове и в документах. Хаос и непредсказуемость вызывают у вас желание все систематизировать. Вы уважаете традиции и иерархию, считая, что правила придуманы не просто так, а для безопасности и эффективности.</p>
+                <p>Вы не стремитесь к славе или вниманию. Вы — тот самый «серый кардинал», который молча делает всю самую сложную и нудную работу, пока остальные болтают и генерируют безумные идеи.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Надежность.</b> На вас всегда можно положиться. Вы никогда не бросаете слов на ветер.</li>
+                    <li><b>Организованность.</b> У вас все по полочкам. Вы умеете планировать время и ресурсы с точностью швейцарских часов.</li>
+                    <li><b>Внимание к деталям.</b> Вы заметите ошибку в договоре, которую пропустили десять других людей.</li>
+                    <li><b>Спокойствие.</b> В критической ситуации вы не паникуете, а действуете по инструкции.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Упрямство.</b> Если вы решили, что правы, переубедить вас практически невозможно. Вы верите фактам, а не мнениям.</li>
+                    <li><b>Негибкость.</b> «Мы всегда так делали» — ваша любимая фраза. Перемены и новаторство даются вам с трудом.</li>
+                    <li><b>Холодность.</b> Вы выражаете заботу делом, а не словом. Близким может не хватать вашего эмоционального тепла.</li>
+                    <li><b>Склонность судить.</b> Вы не понимаете людей, которые ленивы или неорганизованны, и часто осуждаете их.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Ваш личный ад:</p>
+                <ul>
+                    <li><b>Хаос и беспорядок.</b> Когда вещи лежат не на своих местах или планы меняются в последнюю минуту.</li>
+                    <li><b>Ненадежные люди.</b> Опоздания и невыполненные обещания выводят вас из себя.</li>
+                    <li><b>Эмоциональные драмы.</b> Вы не знаете, как реагировать на чужие слезы и истерики.</li>
+                    <li><b>Абстрактные теории.</b> Обсуждение «смысла жизни» кажется вам пустой тратой времени.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы — самый преданный друг. Вы можете не звонить каждый день, чтобы поболтать ни о чем, но если другу понадобится помощь с переездом или деньгами — вы придете первым. Вы цените старых друзей и проверенные временем связи.</p>
+                <p>В общении вы прямы и честны. Вы не любите интриг и сплетен. Если вам что-то не нравится, вы скажете об этом в лицо, что иногда может ранить более чувствительных людей.</p>
+            `,
+            love: `
+                <p>Вы не про серенады под окном, вы про «я починил кран и оплатил страховку». Для вас любовь — это ответственность и обязательства. Вы ищете партнера, который разделяет ваши ценности: семья, стабильность, верность.</p>
+                <p>Вы очень стабильны в отношениях. Измены и драмы — это не про вас. Ваша главная проблема — научиться говорить о своих чувствах, а не держать все внутри, считая, что «и так все понятно».</p>
+            `
+        },
+        "ISFJ": {
+            name: "Защитник",
+            desc: `
+                <p>Вы — сердце любого коллектива и семьи. Тихий, скромный, но невероятно сильный человек, на котором держится всё. Вы не ищете признания, вы просто хотите, чтобы все были в безопасности и счастливы. Вы обладаете уникальной памятью на детали о людях: вы помните, какой кофе любит коллега и как зовут кошку вашего соседа.</p>
+                <p>Вы — истинный альтруист, но практичный. Вы не будете читать лекции о спасении мира, вы просто молча помоете посуду или поможете закончить отчет. Ваше чувство долга и ответственности безгранично. Вы часто работаете больше всех, но стесняетесь просить награду.</p>
+                <p>Вы цените стабильность и гармонию. Перемены вас пугают, если они не спланированы заранее. Вы — хранитель традиций, создающий уют и тепло везде, где появляетесь.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Поддержка.</b> Вы всегда готовы выслушать и помочь. Люди чувствуют себя рядом с вами как за каменной стеной.</li>
+                    <li><b>Наблюдательность.</b> Вы замечаете малейшие изменения в настроении людей или в обстановке. От вас ничего не скрыть.</li>
+                    <li><b>Трудолюбие.</b> Вы доводите дело до конца, даже если оно скучное. Вы не бросаете работу на полпути.</li>
+                    <li><b>Практичность.</b> Вы умеете распоряжаться ресурсами и наводить порядок в хаосе.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Безотказность.</b> Вам невероятно сложно сказать «нет». Люди часто пользуются вашей добротой, сваливая на вас свои обязанности.</li>
+                    <li><b>Подавление эмоций.</b> Вы держите все в себе, чтобы не грузить других, пока не взорветесь или не заболеете от стресса.</li>
+                    <li><b>Нелюбовь к переменам.</b> Новые технологии или методы работы вызывают у вас тревогу. Вы предпочитаете проверенные пути.</li>
+                    <li><b>Заниженная самооценка.</b> Вы склонны преуменьшать свои заслуги, считая их чем-то само собой разумеющимся.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас разрушает:</p>
+                <ul>
+                    <li><b>Конфликты.</b> Крики и агрессия парализуют вас. Вы готовы уступить, лишь бы восстановить мир.</li>
+                    <li><b>Неопределенность.</b> Отсутствие четкого плана и хаотичные изменения вызывают панику.</li>
+                    <li><b>Неблагодарность.</b> Когда ваши усилия воспринимают как должное и не говорят простого «спасибо».</li>
+                    <li><b>Срочность.</b> Дедлайны «вчера» и давление по времени выбивают вас из колеи.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы не стремитесь к широкому кругу общения, вам важна глубина. Вы невероятно лояльны к друзьям. Если вы подружились с кем-то в школе, вы, скорее всего, будете общаться до старости.</p>
+                <p>Вы заботитесь о друзьях делами: помочь с переездом, организовать праздник, посидеть с детьми. Но вам нужно учиться говорить о своих потребностях, иначе отношения могут стать игрой в одни ворота.</p>
+            `,
+            love: `
+                <p>В любви вы ищете безопасность и постоянство. Вы мечтаете о крепкой семье, уютном доме и традиционных ценностях. Случайные связи и драмы вас не интересуют.</p>
+                <p>Вы — партнер, который будет заботиться о любимом каждый день. Завтрак в постель, чистые рубашки, поддержка в трудную минуту — это ваш язык любви. Главное — найти того, кто будет ценить это, а не использовать.</p>
+            `
+        },
+        "ESTJ": {
+            name: "Менеджер",
+            desc: `
+                <p>Вы — воплощение порядка и эффективности. Вы не верите в хаос, вы верите в то, что у каждой вещи и каждого человека должно быть свое место. Вы — прирожденный организатор, способный взять любую неорганизованную группу людей и превратить её в работающий механизм.</p>
+                <p>Вы цените традиции, законы и четкие правила. Для вас мир черно-белый: есть «правильно» и есть «неправильно». Вы не боитесь брать на себя ответственность и руководить, даже если ситуация критическая. Люди уважают вас за вашу прямоту и способность держать слово.</p>
+                <p>Вы — человек дела. Абстрактные мечты и «воздушные замки» вас не интересуют. Вы ставите конкретные цели, составляете план и идете к нему, сметая препятствия своей работоспособностью.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Организованность.</b> Вы — мастер планирования. Хаос исчезает там, где появляетесь вы.</li>
+                    <li><b>Преданность делу.</b> Вы будете работать до тех пор, пока задача не будет выполнена идеально. Вы не бросаете своих.</li>
+                    <li><b>Честность.</b> Вы говорите правду в лицо, даже если она неприятна. Вы не терпите интриг и лжи за спиной.</li>
+                    <li><b>Лидерство.</b> Вы умеете раздавать задачи и контролировать их выполнение так, чтобы процесс шел без сбоев.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Негибкость.</b> Вам трудно принять новые методы, если старые и так работают. Фраза «мы попробуем по-другому» вызывает у вас скепсис.</li>
+                    <li><b>Осуждение.</b> Вы нетерпимы к лени и некомпетентности. Вы можете быть слишком жестким с людьми, которые не соответствуют вашим стандартам.</li>
+                    <li><b>Трудности с эмоциями.</b> Вы считаете эмоции признаком слабости и часто игнорируете чувства других ради эффективности.</li>
+                    <li><b>Трудоголизм.</b> Вы не умеете отдыхать и часто требуете того же от окружающих, доводя их до выгорания.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас выводит из себя:</p>
+                <ul>
+                    <li><b>Беспорядок и неэффективность.</b> Когда люди тратят время впустую или работают спустя рукава.</li>
+                    <li><b>Нарушение субординации.</b> Вы уважаете иерархию и требуете уважения к своему авторитету.</li>
+                    <li><b>Внезапные изменения.</b> Если план меняется пять раз за день, вы впадаете в ярость.</li>
+                    <li><b>Иррациональное поведение.</b> Истерики и эмоциональные всплески кажутся вам бессмысленным шумом.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы — надежный друг. Вы тот, кто поможет организовать переезд, спланировать свадьбу или разрулить сложную ситуацию. Вы всегда приходите вовремя и выполняете обещания.</p>
+                <p>В общении вы любите конкретику. Долгие разговоры «ни о чем» вас утомляют. Вы можете показаться властным, но ваши близкие знают: вы командуете, потому что заботитесь и хотите, чтобы всё было сделано наилучшим образом.</p>
+            `,
+            love: `
+                <p>В отношениях вы ищете стабильность и общие ценности. Вы — защитник и добытчик. Вы выражаете любовь через обеспечение безопасности и комфорта для своей семьи.</p>
+                <p>Вы не склонны к романтическим безумствам, но зато вы помните про годовщины и всегда оплачиваете счета. Ваша задача — научиться слышать эмоциональные потребности партнера, а не только решать его бытовые проблемы.</p>
+            `
+        },
+        "ESFJ": {
+            name: "Консул",
+            desc: `
+                <p>Вы — душа любой компании и клей, который держит общество вместе. Вы не просто любите людей, вы черпаете в них энергию. Вам важно быть полезным, уважаемым и нужным. Вы — тот человек, который первым замечает, что кому-то грустно, и бежит исправлять ситуацию.</p>
+                <p>Вы цените традиции, иерархию и понятные правила игры. Бунтарство ради бунтарства вам непонятно. Вы верите, что если все будут соблюдать этикет и заботиться друг о друге, мир станет идеальным местом. Вы — мастер создания уютной атмосферы, будь то рабочий офис или домашний ужин.</p>
+                <p>Вы очень практичны. Абстрактные философские споры вас утомляют, зато обсуждение реальных дел, планов на выходные или помощи коллеге вызывает у вас энтузиазм. Вы живете «здесь и сейчас», заботясь о комфорте окружающих.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Практическая помощь.</b> Вы не просто сочувствуете, вы действуете. Принести лекарства, организовать праздник, помирить друзей — это ваша стихия.</li>
+                    <li><b>Лояльность.</b> Вы невероятно преданы своей семье, друзьям и компании. Вы будете защищать «своих» до последнего.</li>
+                    <li><b>Чувство долга.</b> Вы ответственны и исполнительны. Если вы взяли на себя обязательство, вы его выполните.</li>
+                    <li><b>Социальный интеллект.</b> Вы прекрасно чувствуете настроение группы и умеете сглаживать острые углы.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Зависимость от мнения окружающих.</b> Вам жизненно важно, чтобы вас любили и ценили. Критика или равнодушие могут вогнать вас в депрессию.</li>
+                    <li><b>Навязчивость.</b> Иногда вашей заботы становится слишком много. Вы можете «душить» людей своим вниманием и обижаться, если они просят дистанции.</li>
+                    <li><b>Негибкость.</b> Вы часто судите людей, которые живут не по общепринятым нормам. «Так не положено» — весомый аргумент для вас.</li>
+                    <li><b>Самопожертвование.</b> Вы часто забываете о своих потребностях, растворяясь в проблемах других.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Ваш кошмар:</p>
+                <ul>
+                    <li><b>Конфликты.</b> Любая ссора выбивает у вас землю из-под ног. Вы готовы на всё, лишь бы вернуть мир.</li>
+                    <li><b>Одиночество.</b> Игнор и изоляция — самое страшное наказание для вас.</li>
+                    <li><b>Критика.</b> Замечания в свой адрес вы воспринимаете как трагедию и подтверждение того, что вы «плохой».</li>
+                    <li><b>Неопределенность.</b> Вам нужно четко знать, что будет завтра.</li>
+                </ul>
+            `,
+            relations: `
+                <p>У вас всегда много друзей, и вы — центр притяжения. Вы помните все даты, дарите лучшие подарки и всегда знаете, как развлечь гостей. Люди тянутся к вашему теплу.</p>
+                <p>Однако вы требуете взаимности. Если вы вкладываетесь в отношения, вы ждете такой же отдачи. Игра в одни ворота вас быстро разочаровывает.</p>
+            `,
+            love: `
+                <p>В любви вы ищете стабильность, брак и «как у людей». Вы мечтаете о красивой свадьбе, уютном доме и воскресных обедах. Вы очень заботливый и преданный партнер.</p>
+                <p>Вам важно слышать слова любви и получать подтверждение своей значимости. Вы не любите сложные «игры разума» и эмоциональные качели. Вам нужно простое, понятное и надежное счастье.</p>
+            `
+        },
+        "ISTP": {
+            name: "Виртуоз",
+            desc: `
+                <p>Вы — прирожденный исследователь материального мира. Вы познаете жизнь через действие: разобрать, собрать, починить, улучшить. Вы не любите читать инструкции, вы предпочитаете учиться методом тыка (и у вас это отлично получается). Ваш девиз: «Меньше слов, больше дела».</p>
+                <p>Вы обладаете ледяным спокойствием. Пока другие паникуют, вы молча ищете решение. Вы — мастер кризисных ситуаций. Вам нравится риск, скорость и адреналин. Рутина офисного планктона для вас — медленная смерть.</p>
+                <p>Вы — одинокий волк. Вы цените свою независимость превыше всего и не терпите, когда кто-то пытается залезть вам в душу или ограничить вашу свободу. Вы живете моментом и легко адаптируетесь к любым изменениям.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Практичность.</b> Вы умеете работать руками и инструментами. Вы тот человек, который может починить всё: от тостера до сервера.</li>
+                    <li><b>Стрессоустойчивость.</b> В критической ситуации вы отключаете эмоции и включаете холодную логику.</li>
+                    <li><b>Креативность.</b> Вы находите нестандартные технические решения. Вы — инженер-импровизатор.</li>
+                    <li><b>Спонтанность.</b> Вы легки на подъем. Сорваться в поездку за час до вылета? Легко.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Замкнутость.</b> Понять, о чем вы думаете, невозможно. Вы не делитесь планами и чувствами, что сводит близких с ума.</li>
+                    <li><b>Нечувствительность.</b> Вы часто раните людей своей прямотой или черным юмором, даже не замечая этого. Эмоциональные тонкости — не ваш конек.</li>
+                    <li><b>Скука.</b> Вам быстро все надоедает. Вы можете загореться проектом, сделать сложную часть и бросить, когда останется рутина.</li>
+                    <li><b>Риск.</b> Вы склонны к опасному поведению ради порции адреналина.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас выбешивает:</p>
+                <ul>
+                    <li><b>Эмоциональное давление.</b> Когда от вас требуют «поговорить о чувствах» или устраивают истерики.</li>
+                    <li><b>Жесткие правила.</b> Бюрократия и инструкции «как надо жить» вызывают у вас желание все нарушить.</li>
+                    <li><b>Рутина.</b> День сурка убивает вашу продуктивность.</li>
+                    <li><b>Навязчивость.</b> Когда кто-то нарушает ваше личное пространство.</li>
+                </ul>
+            `,
+            relations: `
+                <p>С вами интересно, но сложно. Вы не любите долгие разговоры по душам, вы предпочитаете делать что-то вместе: спорт, игры, походы. Ваши друзья знают: если у них сломалась машина посреди трассы — звонить надо вам.</p>
+                <p>Вы часто исчезаете «в пещеру», чтобы побыть одному. Друзьям нужно просто привыкнуть к этому ритму и не обижаться.</p>
+            `,
+            love: `
+                <p>В любви вы независимы. Вам нужен партнер, который даст вам много свободы и не будет требовать постоянных отчетов «где ты был». Вы не романтик с цветами и стихами, вы выражаете любовь через действия (починил, подвез, защитил).</p>
+                <p>Вам сложно даются обязательства на "всю жизнь". Вы живете сегодняшним днем. Но если партнер уважает ваши границы и разделяет ваши увлечения, вы будете верны ему.</p>
+            `
+        },
+        "ISFP": {
+            name: "Артист",
+            desc: `
+                <p>Вы — истинный художник жизни. Не обязательно с кистью в руках, но обязательно с чувством прекрасного в душе. Вы живете «здесь и сейчас», наслаждаясь моментом. Для вас важна эстетика, гармония и свобода самовыражения. Вы — тот человек, который найдет красоту в старой улице или случайном луче солнца.</p>
+                <p>Вы добры, мягки и не любите навязывать свое мнение. Вы предпочитаете наблюдать и поддерживать, а не командовать. Вы избегаете конфликтов любой ценой, считая, что худой мир лучше доброй ссоры.</p>
+                <p>Вы — интроверт, но очень теплый. Вам нужно много личного пространства, чтобы творить и перезаряжаться. Вы не любите жесткие рамки, графики и корпоративный дресс-код. Ваша душа требует свободы.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Креативность.</b> У вас отличное воображение и чувство стиля. Вы умеете создавать красивые вещи и нестандартные решения.</li>
+                    <li><b>Эмпатия.</b> Вы очень тонко чувствуете эмоции других. Вы никогда не раните человека намеренно.</li>
+                    <li><b>Спонтанность.</b> Вы умеете адаптироваться к ситуации. С вами легко и весело, вы всегда готовы к неожиданным приключениям.</li>
+                    <li><b>Практичность.</b> Несмотря на мечтательность, вы твердо стоите на ногах и умеете работать руками.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Непредсказуемость.</b> Долгосрочное планирование — ваша слабая сторона. Вы живете настроением, что может раздражать более организованных людей.</li>
+                    <li><b>Ранимость.</b> Критика, даже конструктивная, глубоко вас ранит. Вы склонны принимать все на свой счет.</li>
+                    <li><b>Избегание конфликтов.</b> Вы будете терпеть неудобства до последнего, лишь бы не ссориться, а потом молча уйдете.</li>
+                    <li><b>Низкая самооценка.</b> Вы часто недооцениваете свои таланты, считая их чем-то обыденным.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас разрушает:</p>
+                <ul>
+                    <li><b>Жесткие рамки.</b> Работа с 9 до 18 и строгие правила убивают ваше вдохновение.</li>
+                    <li><b>Конфликты.</b> Крики и агрессивная атмосфера вызывают желание сбежать.</li>
+                    <li><b>Абстрактные теории.</b> Вам скучно обсуждать то, что нельзя увидеть или потрогать.</li>
+                    <li><b>Критика.</b> Грубые слова в ваш адрес могут выбить вас из колеи надолго.</li>
+                </ul>
+            `,
+            relations: `
+                <p>Вы не стремитесь быть душой компании, но в узком кругу вы раскрываетесь как веселый и теплый друг. Вы не любите судить людей, принимая их такими, какие они есть.</p>
+                <p>Вам важно, чтобы друзья уважали ваше личное пространство. Иногда вы пропадаете на неделю, чтобы побыть наедине с собой — это ваша норма.</p>
+            `,
+            love: `
+                <p>В любви вы невероятно нежны и внимательны. Вы не мастер красивых слов, вы выражаете любовь через прикосновения, подарки и заботу. Вы ищете партнера, который будет вашей музой и опорой.</p>
+                <p>Вам нужно время, чтобы открыться. Вы боитесь быть отвергнутым, поэтому долго присматриваетесь к партнеру. Вам важна эмоциональная близость и отсутствие давления.</p>
+            `
+        },
+        "ESTP": {
+            name: "Делец",
+            desc: `
+                <p>Вы — человек-торнадо. Вы живете здесь и сейчас, и вы хотите взять от жизни всё. Абстрактные теории и планы на 10 лет вперед вызывают у вас зевоту. Вы предпочитаете действовать, ошибаться, исправлять и снова действовать. Ваш девиз: «Лучше сделать и пожалеть, чем не сделать».</p>
+                <p>Вы обладаете невероятной энергией и проницательностью. Вы замечаете мельчайшие изменения в поведении людей, что делает вас блестящим переговорщиком или манипулятором (в хорошем смысле). Вы умеете «продать» что угодно кому угодно.</p>
+                <p>Вы не любите правила. Если инструкция мешает результату, вы её нарушите. Вы любите риск, скорость и конкуренцию. Сидеть в тихом офисе с 9 до 18 для вас — настоящая пытка.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Смелость.</b> Вы не боитесь сложных задач. Там, где другие видят опасность, вы видите возможность.</li>
+                    <li><b>Рациональность.</b> Несмотря на импульсивность, вы принимаете решения на основе фактов и логики, а не эмоций.</li>
+                    <li><b>Общительность.</b> Вы — мастер нетворкинга. Вы легко заводите полезные знакомства и чувствуете себя как рыба в воде в любой компании.</li>
+                    <li><b>Импровизация.</b> Вы способны выкрутиться из любой ситуации без подготовки.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Нетерпеливость.</b> Вы хотите результат немедленно. Долгосрочные проекты, где награда будет через год, вас не мотивируют.</li>
+                    <li><b>Риск.</b> Вы часто ходите по краю, ставя на кон слишком много (деньги, здоровье, отношения).</li>
+                    <li><b>Нечувствительность.</b> Вы говорите прямо и жестко, не заботясь о том, что можете кого-то обидеть. Эмоциональные нюни вас раздражают.</li>
+                    <li><b>Проблемы с правилами.</b> У вас аллергия на авторитеты и бюрократию, что часто создает проблемы с законом или начальством.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Вас бесит:</p>
+                <ul>
+                    <li><b>Рутина и скука.</b> День сурка сводит вас с ума. Вам нужна постоянная смена картинки.</li>
+                    <li><b>Ограничения.</b> Запреты, дресс-код и жесткий график вызывают желание бунтовать.</li>
+                    <li><b>Абстрактные теории.</b> Философские беседы «ни о чем» кажутся вам тратой времени.</li>
+                    <li><b>Микроменеджмент.</b> Вы ненавидите, когда вас контролируют.</li>
+                </ul>
+            `,
+            relations: `
+                <p>С вами весело. Вы всегда знаете, где лучшая вечеринка, самый вкусный ресторан или самое опасное приключение. Люди тянутся к вашей энергии.</p>
+                <p>Однако близким может быть сложно с вашей непредсказуемостью. Вы можете забыть о чувствах партнера в погоне за новой целью. Вам нужно учиться иногда замедляться.</p>
+            `,
+            love: `
+                <p>Любовь для вас — это страсть и драйв. Вам нужен партнер, который не будет «пилить» вас за риск и спонтанность, а прыгнет с вами с парашютом (или хотя бы будет ждать на земле с аптечкой).</p>
+                <p>Вам быстро становится скучно, если отношения превращаются в бытовуху. Чтобы удержать вас, партнер должен быть загадкой и постоянно вас удивлять.</p>
+            `
+        },
+        "ESFP": {
+            name: "Развлекатель",
+            desc: `
+                <p>Вы — звезда. Даже если вы стесняетесь, стоит вам войти в комнату — и энергия меняется. Вы живете, чтобы испытывать эмоции и дарить их другим. Скука, одиночество и серые будни — ваши главные враги. Вы хотите, чтобы жизнь была похожа на вечный праздник или увлекательное шоу.</p>
+                <p>Вы невероятно наблюдательны. Вы замечаете все: новую прическу коллеги, смену настроения друга, красивый закат. Вы цените эстетику и комфорт. Вы не будете страдать ради высшей цели, вы лучше устроите пикник прямо сейчас.</p>
+                <p>Вы — самый спонтанный тип. Планы? Расписания? Зачем, если можно просто пойти и сделать то, что хочется прямо сейчас? Вы заражаете своим оптимизмом всех вокруг.</p>
+            `,
+            strengths: `
+                <ul>
+                    <li><b>Смелость.</b> Вы не боитесь быть ярким и выделяться из толпы. Вы любите сцену (в любом смысле).</li>
+                    <li><b>Оригинальность.</b> У вас отличное чувство стиля и вкус. Вы умеете сделать красиво из ничего.</li>
+                    <li><b>Навыки общения.</b> Вы ладите с кем угодно. Люди обожают вас за легкость и юмор.</li>
+                    <li><b>Практичность.</b> Несмотря на внешнюю ветреность, вы твердо стоите на ногах и умеете решать бытовые вопросы.</li>
+                </ul>
+            `,
+            weaknesses: `
+                <ul>
+                    <li><b>Неумение планировать.</b> Вы живете моментом. Думать о пенсии или долгосрочных последствиях для вас скучно и страшно.</li>
+                    <li><b>Ранимость.</b> Вы очень чувствительны к критике. Если вас не любят, вы страдаете.</li>
+                    <li><b>Поверхностность.</b> Вам сложно долго концентрироваться на глубоких, сложных проблемах. Вы предпочитаете избегать негатива.</li>
+                    <li><b>Импульсивность.</b> Потратить всю зарплату на вечеринку или красивую вещь? Легко.</li>
+                </ul>
+            `,
+            stress: `
+                <p>Что вас гасит:</p>
+                <ul>
+                    <li><b>Одиночество.</b> Без людей вы вянете, как цветок без воды.</li>
+                    <li><b>Рутина.</b> Офисная работа с бумагами — это тюрьма для вашей души.</li>
+                    <li><b>Абстрактные теории.</b> Научные дебаты и сухие факты вызывают у вас сонливость.</li>
+                    <li><b>Критика.</b> Негатив в ваш адрес выбивает вас из колеи.</li>
+                </ul>
+            `,
+            relations: `
+                <p>У вас миллион знакомых. Вы — тот человек, который всегда собирает тусовки. С вами никогда не бывает скучно. Вы щедры, добры и всегда готовы прийти на помощь.</p>
+                <p>Однако вы избегаете тяжелых разговоров и проблем в отношениях. Если становится "слишком сложно", вы склонны сбегать, вместо того чтобы решать конфликт.</p>
+            `,
+            love: `
+                <p>В любви вы — огонь. Вы осыпаете партнера подарками, вниманием и эмоциями. Вам важно, чтобы отношения были красивыми и веселыми.</p>
+                <p>Вам нужен партнер, который будет восхищаться вами и поддерживать ваши безумные идеи. Вы боитесь скуки в браке больше всего на свете. Обязательства пугают вас, если они означают конец веселью.</p>
+            `
+        }
     };
+
     // --- STATE ---
     let curLvl = 0;
     let curQ = 0;
-    // MBTI
     let mbti = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
-    // RIASEC
     let riasec = {R:0,I:0,A:0,S:0,E:0,C:0};
-    // GPS DATA (Навыки и Фильтры)
     let userSkills = { math:5, art:5, stress:5, phys:5, lang:1, speak:5 }; 
     let userFilters = { blood:true, remoteOnly:false, manual:true, studyLong:true, schedule:false };
 
@@ -812,7 +1367,6 @@
         document.getElementById('q-counter').innerText = `ВОПРОС ${curQ+1} / ${levels[curLvl].qs.length}`;
         document.getElementById('q-text').innerText = q.text;
         
-        // Progress
         document.getElementById('bar').style.width = ((curQ / levels[curLvl].qs.length) * 100) + "%";
 
         const btns = document.getElementById('type-btn');
@@ -827,14 +1381,9 @@
                 b.className = 'btn';
                 b.innerText = o.t;
                 b.onclick = () => {
-                    // MBTI
                     if(o.a) for(let k in o.a) mbti[k] += o.a[k];
-                    // RIASEC
                     if(o.r) for(let k in o.r) riasec[k] += o.r[k];
-                    // FILTERS (VETO)
-                    if(o.filter) {
-                        for(let k in o.filter) userFilters[k] = o.filter[k];
-                    }
+                    if(o.filter) for(let k in o.filter) userFilters[k] = o.filter[k];
                     step();
                 };
                 btns.appendChild(b);
@@ -851,7 +1400,6 @@
         const q = levels[curLvl].qs[curQ];
         const score = val - 5; 
 
-        // 1. MBTI
         if(q.t_a) {
             if(score > 0) mbti[q.t_a] += score;
             else {
@@ -859,22 +1407,26 @@
                 mbti[opp[q.t_a]] += Math.abs(score);
             }
         }
-        // 2. RIASEC
         if(q.t_r && val >= 5) riasec[q.t_r] += (val - 4);
-        
-        // 3. SKILLS (GPS)
-        if(q.skill) {
-            userSkills[q.skill] = val; // Записываем точное значение (0-10)
-        }
+        if(q.skill) userSkills[q.skill] = val;
 
         step();
     }
 
+    // --- ГЛАВНАЯ ФУНКЦИЯ ПЕРЕХОДА (ЕДИНАЯ ВЕРСИЯ) ---
     function step() {
+        // 1. СНАЧАЛА увеличиваем счетчик
         curQ++;
-        if(curQ < levels[curLvl].qs.length) renderQ();
-        else {
+
+        // 2. ПОТОМ проверяем и сохраняем
+        if(curQ < levels[curLvl].qs.length) {
+            saveProgress(); // Сохраняем "Я на вопросе N"
+            renderQ();      // Рисуем вопрос N
+        } else {
             curLvl++;
+            curQ = 0;
+            saveProgress(); // Сохраняем "Я на следующем уровне"
+            
             if(curLvl < levels.length) nextScreen('level');
             else finish();
         }
@@ -883,21 +1435,16 @@
     function finish() {
         nextScreen('result');
         
-        // 1. Расчет MBTI (как было)
         let code = "";
         code += mbti.E >= mbti.I ? "E" : "I";
         code += mbti.S >= mbti.N ? "S" : "N";
         code += mbti.T >= mbti.F ? "T" : "F";
         code += mbti.J >= mbti.P ? "J" : "P";
         
-        // Берем данные из базы (которую мы обновим ниже)
         const p = mbtiInfo[code]; 
         
-        // Заполняем заголовок
         document.getElementById('res-code').innerText = code;
-        document.getElementById('res-name').innerText = p.name; // Заменил n на name для читаемости
-
-        // Заполняем НОВЫЕ поля (текст)
+        document.getElementById('res-name').innerText = p.name;
         document.getElementById('res-desc').innerHTML = p.desc;
         document.getElementById('res-strengths').innerHTML = p.strengths;
         document.getElementById('res-weaknesses').innerHTML = p.weaknesses;
@@ -905,9 +1452,7 @@
         document.getElementById('res-relations').innerHTML = p.relations;
         document.getElementById('res-love').innerHTML = p.love;
 
-        // 2. График (оставляем тот же код отрисовки Chart...)
         const ctx = document.getElementById('radarChart').getContext('2d');
-        // ... (код графика тот же, не меняй) ...
         new Chart(ctx, {
             type: 'radar',
             data: {
@@ -931,15 +1476,10 @@
             }
         });
 
-        // 3. Подбор профессий и СОВЕТ
         let maxR = 1;
         for(let k in riasec) if(riasec[k] > maxR) maxR = riasec[k];
 
         jobs.forEach(j => {
-            // (Тут твой код расчета с фильтрами и скиллами - оставь его!)
-            // ... Вставь сюда ту логику расчета GPS из прошлого шага ...
-            
-            // ПОВТОРЮ РАСЧЕТ ДЛЯ ПРИМЕРА (чтобы ты не запутался):
             let dist = 0;
             ['R','I','A','S','E','C'].forEach(k => {
                 let u = (riasec[k]/maxR)*100;
@@ -966,37 +1506,86 @@
 
         jobs.sort((a,b) => b.match - a.match);
         
-        // ВЫВОД СПИСКА
         const list = document.getElementById('jobs-list');
-        list.innerHTML = ""; // Очистка
-        jobs.slice(0,5).forEach(j => {
+        list.innerHTML = "";
+        jobs.slice(0,5).forEach((j, index) => {
             const row = document.createElement('div');
             row.className = 'job-row';
+            row.style.animationDelay = `${index * 0.1}s`; 
             row.innerHTML = `<span>${j.n}</span><span class="job-score">${j.match}%</span>`;
             list.appendChild(row);
         });
 
-        // ВЫВОД СОВЕТА ДЛЯ ТОП-1
         const topJob = jobs[0];
         const adviceBox = document.getElementById('top-job-advice');
-        // Если у профессии есть уникальный совет - берем его, иначе дефолтный
-        const adviceText = topJob.advice 
-            ? topJob.advice 
-            : `Чтобы стартовать в профессии <b>${topJob.n}</b>, начните с изучения базовой теории и поиска стажировок. Эта сфера требует практики.`;
-        
+        const adviceText = topJob.advice ? topJob.advice : `Чтобы стартовать в профессии...`;
         adviceBox.innerHTML = `<div style="font-size:0.9em; text-transform:uppercase; color:#888; margin-bottom:10px;">Совет для старта:</div>${adviceText}`;
     }
 
+    // --- ВОТ ТУТ Я ПОЧИНИЛ ФУНКЦИЮ TOGGLE ---
     function toggle(el) {
-        const item = el.parentElement;
-        const icon = el.querySelector('.acc-icon');
+        // Просто переключаем класс open у родителя, CSS сам повернет стрелку
+        el.parentElement.classList.toggle('open');
+    }
+
+    // --- СОХРАНЕНИЕ ---
+    function saveProgress() {
+        const data = { curLvl, curQ, mbti, riasec, userSkills, userFilters };
+        localStorage.setItem('careerTest_v12_final', JSON.stringify(data)); 
+    }
+
+    function resetTest() {
+        localStorage.removeItem('careerTest_v12_final');
+        location.reload();
+    }
+
+    function openModal() { document.getElementById('confirm-modal').classList.add('active'); }
+    function closeModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+    // --- ЛОГИКА "ПОДЕЛИТЬСЯ" ---
+    function shareResult() {
+        const code = document.getElementById('res-code').innerText;
+        const name = document.getElementById('res-name').innerText;
+        const topJobText = document.querySelector('.job-row span').innerText; 
         
-        if(item.classList.contains('open')) {
-            item.classList.remove('open');
-            icon.innerText = '+';
-        } else {
-            item.classList.add('open');
-            icon.innerText = '−';
+        // window.location.href — это текущая ссылка на твой сайт
+        const url = window.location.href; 
+
+        const shareText = `🚀 Мой результат в Easy Career:\n\n🧠 Психотип: ${code} (${name})\n💼 Топ профессия: ${topJobText}\n\nПройди тест тоже: ${url}`;
+
+        navigator.clipboard.writeText(shareText).then(() => {
+            const btnText = document.getElementById('share-text');
+            const original = btnText.innerText;
+            btnText.innerText = "Скопировано!";
+            setTimeout(() => btnText.innerText = original, 2000);
+        });
+    }
+
+    // --- АВТОЗАГРУЗКА ---
+    const savedData = localStorage.getItem('careerTest_v12_final');
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            curLvl = data.curLvl;
+            curQ = data.curQ;
+            mbti = data.mbti;
+            riasec = data.riasec;
+            userSkills = data.userSkills || userSkills;
+            userFilters = data.userFilters || userFilters;
+
+            if (curLvl >= levels.length) {
+                finish();
+            } else {
+                if(curQ > 0) {
+                    nextScreen('quiz');
+                    renderQ(); 
+                } else {
+                    nextScreen('level');
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            resetTest();
         }
     }
 </script>
