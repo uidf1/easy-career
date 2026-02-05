@@ -375,12 +375,54 @@
 
 </head>
 <body>
+    <div id="view-login" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: #f4f4f9; /* Цвет фона твоего сайта */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+">
+    <div class="card" style="
+        width: 100%;
+        max-width: 400px; /* Чтобы не была слишком широкой */
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Красивая тень */
+        margin: 20px; /* Отступы на мобилках */
+    ">
+        <h1 style="margin-bottom: 10px;"> Доступ закрыт</h1>
+        <p style="color: var(--gray); margin-bottom: 25px; line-height: 1.5;">
+            Это закрытое тестирование.<br>Введите код доступа.
+        </p>
+        
+        <input type="text" id="code-input" placeholder="Введите код..." 
+               style="
+                   width: 100%; 
+                   padding: 15px; 
+                   font-size: 1.1em; 
+                   border: 2px solid #eee; 
+                   border-radius: 12px; 
+                   margin-bottom: 20px; 
+                   outline: none;
+                   text-align: center; /* Текст по центру поля */
+               ">
+        
+        <button class="btn btn-main" onclick="tryLogin()" style="width: 100%; justify-content: center;">
+            Открыть доступ
+        </button>
+        
+        <div id="login-error" style="color: #e74c3c; margin-top: 15px; font-size: 0.9em; display: none;"></div>
+    </div>
+</div>
     <button id="exit-btn" onclick="openModal()">На главную</button>
 
     <div id="confirm-modal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-title">Начать заново?</div>
-            <div class="modal-text">Текущий прогресс будет потерян. Вы вернетесь на стартовый экран.</div>
+            <div class="modal-text">Текущий прогресс будет потерян и код доступа потребуется ввести заново. Вы вернетесь на стартовый экран.</div>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal()">Отмена</button>
                 <button class="btn-confirm" onclick="resetTest()">Да, сбросить</button>
@@ -389,8 +431,8 @@
     </div>
 
     <div class="card fade-in">
-        <div id="view-intro" class="content-area" style="justify-content: center;">
-            <div style="max-width: 600px; margin: 0 auto;">
+        <div id="view-intro" class="card" style="margin-top: 7vh; border: none !important;">
+            <div style="max-width: 600px; margin: 0 auto; " >
                 <span class="label">EASY CAREER</span>
                 <h1 style="line-height: 1.3; font-size: 1.9em; margin-bottom: 30px;">
                     «Жизнь — это не поиск себя. <br>Жизнь — это создание себя.»
@@ -550,9 +592,85 @@
             </div>
         </div>
     </div>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // --- 1. БАЗА ВОПРОСОВ ---
+    const SUPABASE_URL = 'https://zatfckabqztktkmibvhw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphdGZja2FicXp0a3RrbWlidmh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMzEzNDYsImV4cCI6MjA4NTkwNzM0Nn0.RbAAv0ziYK7HZ4vyefR3HAlMfZz_nLfogexmj_6IHog';
+    const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+
+    let currentSessionCode = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      
+        const urlParams = new URLSearchParams(window.location.search);
+        const isOpenMode = urlParams.get('open') === 'true';
+
+        if (isOpenMode) {
+            console.log("Режим открытого доступа активирован");
+            
+       
+            const loginScreen = document.getElementById('view-login');
+            if (loginScreen) loginScreen.style.display = 'none';
+            
+      
+            currentSessionCode = 'FREE_ACCESS'; 
+        }
+    });
+ 
+    async function tryLogin() {
+        const input = document.getElementById('code-input');
+        const errorMsg = document.getElementById('login-error');
+        const code = input.value.trim();
+
+        if (!code) {
+            errorMsg.innerText = "Введите код!";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+
+        const { data, error } = await _sb
+            .from('access_codes')
+            .select('*')
+            .eq('code', code)
+            .single(); 
+
+  
+        if (error || !data) {
+            errorMsg.innerText = "Неверный код доступа.";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+   
+        if (data.is_active === false) {
+            errorMsg.innerText = "Этот код заблокирован.";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+   
+        if (data.max_uses !== null && data.usage_count >= data.max_uses) {
+            errorMsg.innerText = "Лимит активаций этого кода исчерпан.";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+   
+        await _sb
+            .from('access_codes')
+            .update({ usage_count: data.usage_count + 1 })
+            .eq('id', data.id);
+
+
+        currentSessionCode = code;
+
+      
+        document.getElementById('view-login').style.display = 'none';
+        document.getElementById('view-intro').style.display = 'flex'; 
+    }
+
     const levels = [
   
         {
@@ -1542,12 +1660,42 @@
             else finish();
         }
     }
+    async function saveToCloud(resultType, bestJob) {
+  
+        let ageStr = "Не указан";
+        if (userProfile.ageGroup === 1) ageStr = "до 12";
+        if (userProfile.ageGroup === 2) ageStr = "12-24";
+        if (userProfile.ageGroup === 3) ageStr = "24-36";
+        if (userProfile.ageGroup === 4) ageStr = "36+";
 
+      
+        const { error } = await _sb
+            .from('test_results')
+            .insert({
+                mbti_type: resultType,
+                top_profession: bestJob,
+                age_group: ageStr,
+                gender: userProfile.gender,
+                used_code: currentSessionCode 
+            });
+
+        if (error) {
+            console.error("Ошибка сохранения:", error);
+        } else {
+            console.log("Данные успешно сохранены в БД! ");
+        }
+    }
     function finish() {
         if (typeof ym === 'function') {
             ym(106678713, 'reachGoal', 'test_finished'); 
         }
-
+        
+        let myType = (mbti.E > mbti.I ? "E" : "I") + 
+                     (mbti.N > mbti.S ? "N" : "S") + 
+                     (mbti.F > mbti.T ? "F" : "T") + 
+                     (mbti.J > mbti.P ? "J" : "P");
+                     
+        saveToCloud(myType, jobs[0].title);
                 
         nextScreen('result');
         
